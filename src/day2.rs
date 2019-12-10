@@ -24,7 +24,7 @@ fn part_two(input_vec: &Vec<i32>) -> i32 {
         }
     }
 
-    0
+    panic!("No value found")
 }
 
 fn run_intcode(noun: i32, verb: i32, input_vec: &Vec<i32>) -> i32 {
