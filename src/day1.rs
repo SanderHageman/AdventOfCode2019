@@ -1,9 +1,6 @@
 use math::round;
-use std::fs;
 
-pub fn day1() {
-    let input = fs::read_to_string("input/day1.txt").expect("Something went wrong!");
-
+pub fn day1(input: std::string::String) {
     let mut p1_result = 0;
     let mut p2_result = 0;
 

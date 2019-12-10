@@ -1,8 +1,4 @@
-use std::fs;
-
-pub fn day2() {
-    let input = fs::read_to_string("input/day2.txt").expect("Something went wrong!");
-
+pub fn day2(input: std::string::String) {
     let input_vec = input
         .trim()
         .split(",")
