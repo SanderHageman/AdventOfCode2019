@@ -23,8 +23,8 @@ pub fn day1() {
         }
     }
 
-    println!("Result1: {:?}", p1_result);
-    println!("Result2: {:?}", p2_result);
+    println!("Day 1 Result1: {:?}", p1_result);
+    println!("Day 1 Result2: {:?}", p2_result);
 }
 
 fn get_required_fuel(mass: i32) -> ResultMass {
