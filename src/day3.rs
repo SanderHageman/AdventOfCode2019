@@ -1,10 +1,11 @@
 use cgmath::Vector2;
 use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 use std::num::ParseIntError;
 use std::str::FromStr;
 
 pub fn day3(input: std::string::String) {
-    let mut paths: Vec<HashSet<Vector2<i32>>> = vec![];
+    let mut paths: Vec<HashSet<Step>> = vec![];
 
     for line in input.lines() {
         let line = line
@@ -13,8 +14,12 @@ pub fn day3(input: std::string::String) {
             .map(|x| x.parse::<InputInstruction>().unwrap())
             .collect::<Vec<_>>();
 
-        let mut path: HashSet<Vector2<i32>> = HashSet::new();
-        let mut pos = Vector2::new(0, 0);
+        let mut path: HashSet<Step> = HashSet::new();
+        let mut pos = Step {
+            step_index: 0,
+            position: Vector2::new(0, 0),
+        };
+
         for input in line {
             input.add_step(&mut pos, &mut path);
         }
@@ -22,17 +27,27 @@ pub fn day3(input: std::string::String) {
     }
 
     let intersections: HashSet<_> = paths[0].intersection(&paths[1]).collect();
-    let mut result_one = i32::max_value();
 
-    for pos in intersections {
-        let dist = pos.x.abs() + pos.y.abs();
-        if dist < result_one {
-            result_one = dist;
+    let mut result_one = i32::max_value();
+    let mut result_two = i32::max_value();
+
+    for step in intersections {
+        let dist_one = step.position.x.abs() + step.position.y.abs();
+        if dist_one < result_one {
+            result_one = dist_one;
+        }
+
+        let a = paths[0].get(&step).unwrap();
+        let b = paths[1].get(&step).unwrap();
+
+        let dist_two = (*a).step_index + (*b).step_index;
+        if dist_two < result_two {
+            result_two = dist_two;
         }
     }
 
     println!("Day 3 Result1: {:?}", result_one);
-    println!("Day 3 Result2: {:?}", 0);
+    println!("Day 3 Result2: {:?}", result_two);
 }
 
 #[derive(Debug)]
@@ -42,13 +57,10 @@ struct InputInstruction {
 }
 
 impl InputInstruction {
-    fn add_step(
-        &self,
-        current_position: &mut Vector2<i32>,
-        result_set: &mut HashSet<Vector2<i32>>,
-    ) {
+    fn add_step(&self, current_position: &mut Step, result_set: &mut HashSet<Step>) {
         for _x in 0..self.distance {
-            *current_position += self.direction;
+            current_position.step_index += 1;
+            current_position.position += self.direction;
             result_set.insert(current_position.clone());
         }
     }
@@ -75,5 +87,23 @@ impl FromStr for InputInstruction {
             direction: dir,
             distance: dist,
         })
+    }
+}
+
+#[derive(Debug, Clone, Eq)]
+struct Step {
+    step_index: i32,
+    position: Vector2<i32>,
+}
+
+impl Hash for Step {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.position.hash(state);
+    }
+}
+
+impl PartialEq for Step {
+    fn eq(&self, other: &Self) -> bool {
+        self.position == other.position
     }
 }
