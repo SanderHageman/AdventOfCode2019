@@ -1,6 +1,6 @@
 use math::round;
 
-pub fn day1(input: std::string::String) {
+pub fn day(input: std::string::String) {
     let mut p1_result = 0;
     let mut p2_result = 0;
 

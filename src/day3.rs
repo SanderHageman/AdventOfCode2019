@@ -4,12 +4,11 @@ use std::hash::{Hash, Hasher};
 use std::num::ParseIntError;
 use std::str::FromStr;
 
-pub fn day3(input: std::string::String) {
+pub fn day(input: std::string::String) {
     let mut paths: Vec<HashSet<Step>> = vec![];
 
     for line in input.lines() {
         let line = line
-            .trim()
             .split(",")
             .map(|x| x.parse::<InputInstruction>().unwrap())
             .collect::<Vec<_>>();

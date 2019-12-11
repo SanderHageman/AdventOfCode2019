@@ -1,6 +1,5 @@
-pub fn day2(input: std::string::String) {
+pub fn day(input: std::string::String) {
     let input_vec = input
-        .trim()
         .split(",")
         .map(|x| x.parse::<i32>().unwrap_or_default())
         .collect::<Vec<_>>();
