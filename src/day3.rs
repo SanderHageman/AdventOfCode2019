@@ -1,11 +1,10 @@
-use cgmath::*;
+use cgmath::Vector2;
+use std::collections::HashSet;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
 pub fn day3(input: std::string::String) {
-    let mut paths: Vec<Vec<InputInstruction>> = vec![];
-
-    // hashset and use intersection
+    let mut paths: Vec<HashSet<Vector2<i32>>> = vec![];
 
     for line in input.lines() {
         let line = line
@@ -14,10 +13,25 @@ pub fn day3(input: std::string::String) {
             .map(|x| x.parse::<InputInstruction>().unwrap())
             .collect::<Vec<_>>();
 
-        paths.push(line);
+        let mut path: HashSet<Vector2<i32>> = HashSet::new();
+        let mut pos = Vector2::new(0, 0);
+        for input in line {
+            input.add_step(&mut pos, &mut path);
+        }
+        paths.push(path);
     }
 
-    println!("Day 3 Result1: {:?}", paths);
+    let intersections: HashSet<_> = paths[0].intersection(&paths[1]).collect();
+    let mut result_one = i32::max_value();
+
+    for pos in intersections {
+        let dist = pos.x.abs() + pos.y.abs();
+        if dist < result_one {
+            result_one = dist;
+        }
+    }
+
+    println!("Day 3 Result1: {:?}", result_one);
     println!("Day 3 Result2: {:?}", 0);
 }
 
@@ -28,8 +42,15 @@ struct InputInstruction {
 }
 
 impl InputInstruction {
-    fn step(&self) -> Vector2<i32> {
-        self.direction * self.distance
+    fn add_step(
+        &self,
+        current_position: &mut Vector2<i32>,
+        result_set: &mut HashSet<Vector2<i32>>,
+    ) {
+        for _x in 0..self.distance {
+            *current_position += self.direction;
+            result_set.insert(current_position.clone());
+        }
     }
 }
 
