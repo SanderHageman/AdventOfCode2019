@@ -4,6 +4,7 @@ mod day1;
 mod day2;
 mod day3;
 mod day4;
+mod day5;
 
 fn main() {
     day1::day(get_input(1));
@@ -13,6 +14,8 @@ fn main() {
     day3::day(get_input(3));
     println!("");
     day4::day(get_input(4));
+    println!("");
+    day5::day(get_input(5));
 }
 
 fn get_input(day: usize) -> String {
