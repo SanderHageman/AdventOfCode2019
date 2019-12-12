@@ -95,7 +95,7 @@ impl Instruction {
         }
     }
 
-    fn get_parameter_three(self, result_vec: &Vec<i32>) -> i32 {
+    fn _get_parameter_three(self, result_vec: &Vec<i32>) -> i32 {
         let offset = 3;
         match self.paramode_thr {
             0 => result_vec[result_vec[self.instruction_index + offset] as usize],
