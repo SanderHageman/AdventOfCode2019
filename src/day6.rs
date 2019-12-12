@@ -22,18 +22,23 @@ fn build_map(input: &Vec<OrbitSet>) {
         let has_start = nodes.contains(&com_node);
         let has_end = nodes.contains(&obj_node);
 
-        let mut start_node = if has_start {
+        let mut com_node = if has_start {
             nodes.take(&com_node).unwrap()
         } else {
             com_node
         };
 
-        start_node.add(obj_node.id.to_owned());
-        nodes.insert(start_node);
+        com_node.next.insert(set.obj.to_owned());
+        nodes.insert(com_node);
 
-        if !has_end {
-            nodes.insert(obj_node);
-        }
+        let mut obj_node = if has_end {
+            nodes.take(&obj_node).unwrap()
+        } else {
+            obj_node
+        };
+
+        obj_node.com = set.com.to_owned();
+        nodes.insert(obj_node);
     }
 
     for node in nodes {
@@ -55,10 +60,6 @@ impl MapNode {
             com: com,
             next: Default::default(),
         }
-    }
-
-    fn add(&mut self, id: String) {
-        self.next.insert(id);
     }
 }
 
