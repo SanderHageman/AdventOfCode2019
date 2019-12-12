@@ -5,7 +5,7 @@ pub fn day(input: std::string::String) {
         .collect::<Vec<_>>();
 
     println!("Day 5 Result1: {:?}", run_intcode(1, &input_vec));
-    println!("Day 5 Result2: {:?}", 0);
+    println!("Day 5 Result2: {:?}", run_intcode(5, &input_vec));
 }
 
 fn run_intcode(input: i32, input_vec: &Vec<i32>) -> i32 {
@@ -18,7 +18,7 @@ fn run_intcode(input: i32, input_vec: &Vec<i32>) -> i32 {
             break;
         };
 
-        if opcode.opcode > 4 || opcode.opcode < 0 {
+        if opcode.opcode > 8 || opcode.opcode < 0 {
             panic!(
                 "opcode out of range {:?} with input {:?} and i {:?}",
                 opcode, input, i
@@ -56,6 +56,38 @@ fn run_intcode(input: i32, input_vec: &Vec<i32>) -> i32 {
                 if next_op.opcode == 99 {
                     return opcode.get_parameter_one(&result_vec);
                 }
+            }
+            5 => {
+                if opcode.get_parameter_one(&result_vec) != 0 {
+                    i = opcode.get_parameter_two(&result_vec) as usize;
+                    instruction_count = 0;
+                } else {
+                    instruction_count = 3;
+                }
+            }
+            6 => {
+                if opcode.get_parameter_one(&result_vec) == 0 {
+                    i = opcode.get_parameter_two(&result_vec) as usize;
+                    instruction_count = 0;
+                } else {
+                    instruction_count = 3;
+                }
+            }
+            7 => {
+                instruction_count = 4;
+                let set =
+                    opcode.get_parameter_one(&result_vec) < opcode.get_parameter_two(&result_vec);
+
+                let set_index = result_vec[i + 3] as usize;
+                result_vec[set_index] = if set { 1 } else { 0 };
+            }
+            8 => {
+                instruction_count = 4;
+                let set =
+                    opcode.get_parameter_one(&result_vec) == opcode.get_parameter_two(&result_vec);
+
+                let set_index = result_vec[i + 3] as usize;
+                result_vec[set_index] = if set { 1 } else { 0 };
             }
             _ => panic!("uncovered opcode found {:?} at {:?}", opcode, i),
         };
