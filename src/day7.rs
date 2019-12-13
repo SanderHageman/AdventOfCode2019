@@ -2,12 +2,19 @@ use super::intcode_computer;
 
 pub fn day(input: std::string::String) {
     let input_vec = input
+        .trim()
         .split(",")
         .map(|x| x.parse::<i32>().unwrap_or_default())
         .collect::<Vec<_>>();
 
+    let result_one = get_part_one(&input_vec);
     let result_two = 0;
 
+    println!("Day 7 Result1: {:?}", result_one);
+    println!("Day 7 Result2: {:?}", result_two);
+}
+
+fn get_part_one(input_vec: &Vec<i32>) -> i32 {
     let mut highest = 0;
     let mut _highest_set: String = Default::default();
 
@@ -16,7 +23,6 @@ pub fn day(input: std::string::String) {
             if b == a {
                 continue;
             }
-
             for c in 0..5 {
                 if c == a || c == b {
                     continue;
@@ -49,8 +55,5 @@ pub fn day(input: std::string::String) {
         }
     }
 
-    let result_one = highest;
-
-    println!("Day 7 Result1: {:?}", result_one);
-    println!("Day 7 Result2: {:?}", result_two);
+    highest
 }
