@@ -5,30 +5,10 @@ pub fn day(input: std::string::String) {
     let input_vec = input.lines().map(|x| OrbitSet::new(x)).collect::<Vec<_>>();
 
     let map = build_map(&input_vec);
-    let tips = map.iter().filter(|x| x.next.is_empty()).collect::<Vec<_>>();
-    let _branches = map.iter().filter(|x| x.next.len() > 1).collect::<Vec<_>>();
-
     let mut result_one = 0;
 
-    for node in tips {
-        let first_target = MapNode::new(node.com.to_owned(), Default::default());
-        let mut com_node = map.get(&first_target).unwrap();
-        let mut to_base_com = 0;
-
-        loop {
-            to_base_com += 1;
-
-            if com_node.com.is_empty() {
-                break;
-            }
-
-            let target = MapNode::new(com_node.com.to_owned(), Default::default());
-            com_node = map.get(&target).unwrap();
-        }
-
-        for x in 0..to_base_com {
-            result_one += x;
-        }
+    for node in map {
+        result_one += node.distance;
     }
 
     println!("Day 6 Result1: {:?}", result_one);
@@ -64,6 +44,28 @@ fn build_map(input: &Vec<OrbitSet>) -> HashSet<MapNode> {
         nodes.insert(obj_node);
     }
 
+    fill_distance(nodes)
+}
+
+fn fill_distance(mut nodes: HashSet<MapNode>) -> HashSet<MapNode> {
+    let nodes_clone = nodes.clone();
+
+    for node in nodes_clone {
+        let first_target = MapNode::new(node.id.to_owned(), Default::default());
+        let mut com_node = nodes.get(&first_target).unwrap();
+        let mut to_base_com = 0;
+
+        while !com_node.com.is_empty() {
+            to_base_com += 1;
+            let target = MapNode::new(com_node.com.to_owned(), Default::default());
+            com_node = nodes.get(&target).unwrap();
+        }
+
+        let mut real_node = nodes.take(&node).unwrap();
+        real_node.distance = to_base_com;
+        nodes.insert(real_node);
+    }
+
     nodes
 }
 
@@ -71,6 +73,7 @@ fn build_map(input: &Vec<OrbitSet>) -> HashSet<MapNode> {
 struct MapNode {
     id: String,
     com: String,
+    distance: i32,
     next: HashSet<String>,
 }
 
@@ -79,6 +82,7 @@ impl MapNode {
         MapNode {
             id: id,
             com: com,
+            distance: 0,
             next: Default::default(),
         }
     }
