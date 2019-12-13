@@ -4,15 +4,38 @@ use std::hash::{Hash, Hasher};
 pub fn day(input: std::string::String) {
     let input_vec = input.lines().map(|x| OrbitSet::new(x)).collect::<Vec<_>>();
 
-    build_map(&input_vec);
+    let map = build_map(&input_vec);
+    let tips = map.iter().filter(|x| x.next.is_empty()).collect::<Vec<_>>();
+    let _branches = map.iter().filter(|x| x.next.len() > 1).collect::<Vec<_>>();
 
-    // find tips and work backwards?
+    let mut result_one = 0;
 
-    println!("Day 6 Result1: {:?}", input_vec);
+    for node in tips {
+        let first_target = MapNode::new(node.com.to_owned(), Default::default());
+        let mut com_node = map.get(&first_target).unwrap();
+        let mut to_base_com = 0;
+
+        loop {
+            to_base_com += 1;
+
+            if com_node.com.is_empty() {
+                break;
+            }
+
+            let target = MapNode::new(com_node.com.to_owned(), Default::default());
+            com_node = map.get(&target).unwrap();
+        }
+
+        for x in 0..to_base_com {
+            result_one += x;
+        }
+    }
+
+    println!("Day 6 Result1: {:?}", result_one);
     println!("Day 6 Result2: {:?}", 0);
 }
 
-fn build_map(input: &Vec<OrbitSet>) {
+fn build_map(input: &Vec<OrbitSet>) -> HashSet<MapNode> {
     let mut nodes: HashSet<MapNode> = Default::default();
 
     for set in input {
@@ -41,9 +64,7 @@ fn build_map(input: &Vec<OrbitSet>) {
         nodes.insert(obj_node);
     }
 
-    for node in nodes {
-        println!("{:?}", node);
-    }
+    nodes
 }
 
 #[derive(Debug, Clone, Eq)]
