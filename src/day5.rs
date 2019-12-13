@@ -8,10 +8,10 @@ pub fn day(input: std::string::String) {
 
     println!(
         "Day 5 Result1: {:?}",
-        intcode_computer::run_intcode(1, &input_vec)
+        intcode_computer::run_intcode(1, 0, &input_vec)
     );
     println!(
         "Day 5 Result2: {:?}",
-        intcode_computer::run_intcode(5, &input_vec)
+        intcode_computer::run_intcode(5, 0, &input_vec)
     );
 }

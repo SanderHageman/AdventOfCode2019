@@ -1,5 +1,8 @@
-pub fn run_intcode(input: i32, input_vec: &Vec<i32>) -> i32 {
+pub fn run_intcode(input1: i32, input2: i32, input_vec: &Vec<i32>) -> i32 {
     let mut result_vec = input_vec.to_vec();
+
+    let mut input_1_consumed = false;
+    let mut input_2_consumed = false;
 
     let mut i = 0;
     while i < result_vec.len() {
@@ -10,8 +13,8 @@ pub fn run_intcode(input: i32, input_vec: &Vec<i32>) -> i32 {
 
         if opcode.opcode > 8 || opcode.opcode < 0 {
             panic!(
-                "opcode out of range {:?} with input {:?} and i {:?}",
-                opcode, input, i
+                "opcode out of range {:?} with inputs {:?}:{:?}  and i {:?}",
+                opcode, input1, input2, i
             );
         }
 
@@ -37,7 +40,15 @@ pub fn run_intcode(input: i32, input_vec: &Vec<i32>) -> i32 {
                 instruction_count = 2;
                 let set_index = result_vec[i + 1] as usize;
 
-                result_vec[set_index] = input;
+                if !input_1_consumed {
+                    result_vec[set_index] = input1;
+                    input_1_consumed = true;
+                } else if !input_2_consumed {
+                    result_vec[set_index] = input2;
+                    input_2_consumed = true;
+                } else {
+                    panic!("unable to consume more inputs!")
+                }
             }
             4 => {
                 instruction_count = 2;
