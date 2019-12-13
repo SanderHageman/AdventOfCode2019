@@ -1,18 +1,34 @@
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
 
 pub fn day(input: std::string::String) {
     let input_vec = input.lines().map(|x| OrbitSet::new(x)).collect::<Vec<_>>();
-
     let map = build_map(&input_vec);
-    let mut result_one = 0;
 
-    for node in map {
+    let mut result_one = 0;
+    let result_two;
+
+    for node in &map {
         result_one += node.distance;
     }
 
+    let you_node = MapNode::new("YOU".to_owned(), Default::default());
+    let mut you_path = get_path_to_com(&map.get(&you_node).unwrap(), &map);
+
+    let san_node = MapNode::new("SAN".to_owned(), Default::default());
+    let san_path = get_path_to_com(&map.get(&san_node).unwrap(), &map);
+
+    you_path.extend(san_path);
+    let pre_dedup_len = you_path.len();
+    let you_san_path: HashSet<String> = HashSet::from_iter(you_path);
+    let post_dedup_len = you_san_path.len();
+    let dedup_diff = pre_dedup_len - post_dedup_len;
+
+    result_two = post_dedup_len - dedup_diff - 2;
+
     println!("Day 6 Result1: {:?}", result_one);
-    println!("Day 6 Result2: {:?}", 0);
+    println!("Day 6 Result2: {:?}", result_two);
 }
 
 fn build_map(input: &Vec<OrbitSet>) -> HashSet<MapNode> {
@@ -67,6 +83,21 @@ fn fill_distance(mut nodes: HashSet<MapNode>) -> HashSet<MapNode> {
     }
 
     nodes
+}
+
+fn get_path_to_com(node: &MapNode, nodes: &HashSet<MapNode>) -> Vec<String> {
+    let mut result: Vec<String> = Default::default();
+
+    let first_target = MapNode::new(node.id.to_owned(), Default::default());
+    let mut com_node = nodes.get(&first_target).unwrap();
+
+    while !com_node.com.is_empty() {
+        result.push(com_node.id.to_owned());
+        let target = MapNode::new(com_node.com.to_owned(), Default::default());
+        com_node = nodes.get(&target).unwrap();
+    }
+
+    result
 }
 
 #[derive(Debug, Clone, Eq)]
