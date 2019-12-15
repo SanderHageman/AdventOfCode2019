@@ -18,7 +18,7 @@ pub fn day(input: std::string::String) {
     }
 
     let result_one = get_part_one(&layers);
-    let result_two = 0;
+    let result_two = compose_image(layer_size, &layers);
 
     println!("Day 8 Result1: {:?}", result_one);
     println!("Day 8 Result2: {:?}", result_two);
@@ -42,4 +42,30 @@ fn get_part_one(layers: &Vec<&[u32]>) -> usize {
     let two_count = layer.iter().filter(|x| **x == 2).count();
 
     one_count * two_count
+}
+
+fn compose_image(layer_size: usize, layers: &Vec<&[u32]>) -> Vec<u32> {
+    let mut result = Vec::<u32>::new();
+
+    for x in 0..layer_size {
+        result.push(get_pixel(x, &layers));
+    }
+
+    result
+}
+
+fn get_pixel(index: usize, layers: &Vec<&[u32]>) -> u32 {
+    let mut result = 2;
+
+    for layer in layers {
+        let pixel = layer[index];
+        if pixel == 2 {
+            continue;
+        }
+
+        result = pixel;
+        break;
+    }
+
+    result
 }
