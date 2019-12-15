@@ -12,7 +12,7 @@ pub fn day(input: std::string::String) {
 
     println!(
         "Day 2 Result1: {:?}",
-        intcode_computer::run_intcode(0, 0, &result1_input)
+        intcode_computer::Computer::simple(vec![0, 0], &result1_input)
     );
     println!("Day 2 Result2: {:?}", part_two(&input_vec));
 }
@@ -27,7 +27,7 @@ fn part_two(input_vec: &Vec<i32>) -> i32 {
             result2_input[1] = x;
             result2_input[2] = y;
 
-            if intcode_computer::run_intcode(0, 0, &result2_input) == part_two_target {
+            if intcode_computer::Computer::simple(vec![0, 0], &result2_input) == part_two_target {
                 return 100 * x + y;
             }
         }

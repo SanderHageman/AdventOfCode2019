@@ -1,74 +1,97 @@
-pub fn run_intcode(input1: i32, input2: i32, input_vec: &Vec<i32>) -> i32 {
-    let mut result_vec = input_vec.to_vec();
+#[derive(Debug)]
+pub struct Computer {
+    registers: Vec<i32>,
+    input: Vec<i32>,
+    instruction_pointer: usize,
+    output: Option<i32>,
+    stop: bool,
+}
 
-    let mut input_1_consumed = false;
-    let mut input_2_consumed = false;
+impl Computer {
+    pub fn empty() -> Computer {
+        Computer {
+            registers: Vec::new(),
+            input: Vec::new(),
+            instruction_pointer: 0,
+            output: None,
+            stop: false,
+        }
+    }
 
-    let mut i = 0;
-    while i < result_vec.len() {
-        let opcode = Instruction::new(i, &result_vec);
-        if opcode.opcode == 99 {
-            break;
+    pub fn simple(input: Vec<i32>, input_registers: &Vec<i32>) -> i32 {
+        let mut inputs = input.clone();
+        inputs.reverse();
+
+        let mut computer = Computer {
+            registers: input_registers.to_vec(),
+            input: inputs,
+            instruction_pointer: 0,
+            output: None,
+            stop: false,
         };
 
-        if opcode.opcode > 8 || opcode.opcode < 0 {
-            panic!(
-                "opcode out of range {:?} with inputs {:?}:{:?}  and i {:?}",
-                opcode, input1, input2, i
-            );
+        computer.compute()
+    }
+
+    pub fn compute(&mut self) -> i32 {
+        while !self.stop {
+            let opcode = Instruction::new(self.instruction_pointer, &self.registers);
+            self.instruction_pointer += self.run_instruction(opcode);
         }
 
+        self.output.unwrap_or(self.registers[0])
+    }
+
+    fn run_instruction(&mut self, opcode: Instruction) -> usize {
+        if (opcode.opcode > 8 || opcode.opcode < 0) && opcode.opcode != 99 {
+            panic!("opcode out of range {:?}", opcode);
+        }
+
+        let pointer = self.instruction_pointer;
         let instruction_count;
+
         match opcode.opcode {
             1 => {
                 instruction_count = 4;
-                let set_index = result_vec[i + 3] as usize;
+                let set_index = self.registers[pointer + 3] as usize;
 
-                let param_one = opcode.get_parameter_one(&result_vec);
-                let param_two = opcode.get_parameter_two(&result_vec);
-                result_vec[set_index] = param_one + param_two;
+                let param_one = opcode.get_parameter_one(&self.registers);
+                let param_two = opcode.get_parameter_two(&self.registers);
+                self.registers[set_index] = param_one + param_two;
             }
             2 => {
                 instruction_count = 4;
-                let set_index = result_vec[i + 3] as usize;
+                let set_index = self.registers[pointer + 3] as usize;
 
-                let param_one = opcode.get_parameter_one(&result_vec);
-                let param_two = opcode.get_parameter_two(&result_vec);
-                result_vec[set_index] = param_one * param_two;
+                let param_one = opcode.get_parameter_one(&self.registers);
+                let param_two = opcode.get_parameter_two(&self.registers);
+                self.registers[set_index] = param_one * param_two;
             }
             3 => {
                 instruction_count = 2;
-                let set_index = result_vec[i + 1] as usize;
-
-                if !input_1_consumed {
-                    result_vec[set_index] = input1;
-                    input_1_consumed = true;
-                } else if !input_2_consumed {
-                    result_vec[set_index] = input2;
-                    input_2_consumed = true;
-                } else {
-                    panic!("unable to consume more inputs!")
-                }
+                let set_index = self.registers[pointer + 1] as usize;
+                self.registers[set_index] = self.input.pop().unwrap();
             }
             4 => {
                 instruction_count = 2;
 
-                let next_op = Instruction::new(i + instruction_count, &result_vec);
+                let next_op = Instruction::new(pointer + instruction_count, &self.registers);
                 if next_op.opcode == 99 {
-                    return opcode.get_parameter_one(&result_vec);
+                    self.output = Some(opcode.get_parameter_one(&self.registers));
+                    self.stop = true;
                 }
             }
             5 => {
-                if opcode.get_parameter_one(&result_vec) != 0 {
-                    i = opcode.get_parameter_two(&result_vec) as usize;
+                if opcode.get_parameter_one(&self.registers) != 0 {
+                    self.instruction_pointer = opcode.get_parameter_two(&self.registers) as usize;
                     instruction_count = 0;
                 } else {
                     instruction_count = 3;
                 }
             }
             6 => {
-                if opcode.get_parameter_one(&result_vec) == 0 {
-                    i = opcode.get_parameter_two(&result_vec) as usize;
+                if opcode.get_parameter_one(&self.registers) == 0 {
+                    self.instruction_pointer = opcode.get_parameter_two(&self.registers) as usize;
                     instruction_count = 0;
                 } else {
                     instruction_count = 3;
@@ -76,27 +99,29 @@ pub fn run_intcode(input1: i32, input2: i32, input_vec: &Vec<i32>) -> i32 {
             }
             7 => {
                 instruction_count = 4;
-                let set =
-                    opcode.get_parameter_one(&result_vec) < opcode.get_parameter_two(&result_vec);
+                let set = opcode.get_parameter_one(&self.registers)
+                    < opcode.get_parameter_two(&self.registers);
 
-                let set_index = result_vec[i + 3] as usize;
-                result_vec[set_index] = if set { 1 } else { 0 };
+                let set_index = self.registers[pointer + 3] as usize;
+                self.registers[set_index] = if set { 1 } else { 0 };
             }
             8 => {
                 instruction_count = 4;
-                let set =
-                    opcode.get_parameter_one(&result_vec) == opcode.get_parameter_two(&result_vec);
+                let set = opcode.get_parameter_one(&self.registers)
+                    == opcode.get_parameter_two(&self.registers);
 
-                let set_index = result_vec[i + 3] as usize;
-                result_vec[set_index] = if set { 1 } else { 0 };
+                let set_index = self.registers[pointer + 3] as usize;
+                self.registers[set_index] = if set { 1 } else { 0 };
             }
-            _ => panic!("uncovered opcode found {:?} at {:?}", opcode, i),
+            99 => {
+                instruction_count = 0;
+                self.stop = true;
+            }
+            _ => panic!("uncovered opcode found {:?} at {:?}", opcode, pointer),
         };
 
-        i += instruction_count;
+        instruction_count
     }
-
-    result_vec[0]
 }
 
 impl Instruction {
