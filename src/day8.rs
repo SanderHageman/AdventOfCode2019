@@ -17,11 +17,9 @@ pub fn day(input: std::string::String) {
         layers.push(&input_vec[layer_size * i..layer_size * (i + 1)])
     }
 
-    let result_one = get_part_one(&layers);
-    let result_two = compose_image(layer_size, &layers);
-
-    println!("Day 8 Result1: {:?}", result_one);
-    println!("Day 8 Result2: {:?}", result_two);
+    println!("Day 8 Result1: {:?}", get_part_one(&layers));
+    println!("Day 8 Result2:");
+    draw_image(width, &compose_image(layer_size, &layers));
 }
 
 fn get_part_one(layers: &Vec<&[u32]>) -> usize {
@@ -42,6 +40,23 @@ fn get_part_one(layers: &Vec<&[u32]>) -> usize {
     let two_count = layer.iter().filter(|x| **x == 2).count();
 
     one_count * two_count
+}
+
+fn draw_image(width: usize, image: &Vec<u32>) {
+    for i in 0..image.len() {
+        if i % width == 0 && i != 0 {
+            print!("\n");
+        }
+
+        let put = match image[i] {
+            0 => '░',
+            1 => '█',
+            _ => panic!("pixel out of range"),
+        };
+
+        print!("{}", put);
+    }
+    print!("\n");
 }
 
 fn compose_image(layer_size: usize, layers: &Vec<&[u32]>) -> Vec<u32> {
