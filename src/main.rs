@@ -10,6 +10,7 @@ mod day4;
 mod day5;
 mod day6;
 mod day7;
+mod day8;
 
 fn main() {
     day1::day(get_input(1));
@@ -25,6 +26,8 @@ fn main() {
     day6::day(get_input(6));
     println!("");
     day7::day(get_input(7));
+    println!("");
+    day8::day(get_input(8));
 }
 
 fn get_input(day: usize) -> String {
