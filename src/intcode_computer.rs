@@ -5,6 +5,7 @@ pub struct Computer {
     instruction_pointer: usize,
     pub output: Option<i32>,
     pub stop: bool,
+    pub pause: bool,
 }
 
 impl Computer {
@@ -18,6 +19,7 @@ impl Computer {
             instruction_pointer: 0,
             output: None,
             stop: false,
+            pause: false,
         };
 
         computer
@@ -30,6 +32,7 @@ impl Computer {
             instruction_pointer: 0,
             output: None,
             stop: false,
+            pause: false,
         }
     }
 
@@ -44,6 +47,23 @@ impl Computer {
         }
 
         self.output.unwrap_or(self.registers[0])
+    }
+
+    pub fn compute_til_output(&mut self) -> i32 {
+        if self.pause {
+            self.pause = false;
+        }
+
+        while !self.pause {
+            let opcode = Instruction::new(self.instruction_pointer, &self.registers);
+            self.instruction_pointer += self.run_instruction(opcode);
+        }
+
+        self.output.unwrap()
+    }
+
+    pub fn add_input(&mut self, input: i32) {
+        self.input.insert(0, input)
     }
 
     fn run_instruction(&mut self, opcode: Instruction) -> usize {
@@ -79,9 +99,11 @@ impl Computer {
             4 => {
                 instruction_count = 2;
 
+                self.output = Some(opcode.get_parameter_one(&self.registers));
+                self.pause = true;
+
                 let next_op = Instruction::new(pointer + instruction_count, &self.registers);
                 if next_op.opcode == 99 {
-                    self.output = Some(opcode.get_parameter_one(&self.registers));
                     self.stop = true;
                 }
             }
