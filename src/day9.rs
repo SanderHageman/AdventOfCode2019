@@ -7,14 +7,11 @@ pub fn day(input: std::string::String) {
         .map(|x| x.parse::<i64>().unwrap())
         .collect::<Vec<_>>();
 
-    let mut computer = Computer::new(vec![1], &input_vec, 1100);
+    let mut computer_one = Computer::new(vec![1], &input_vec, 1100);
+    let mut computer_two = Computer::new(vec![2], &input_vec, 1100);
 
-    while !computer.stop {
-        println!("{}", computer.compute_til_output());
-    }
-
-    let result_one = computer.output.unwrap();
-    let result_two = 0;
+    let result_one = computer_one.compute();
+    let result_two = computer_two.compute();
 
     println!("Day 9 Result1: {:?}", result_one);
     println!("Day 9 Result2: {:?}", result_two);
