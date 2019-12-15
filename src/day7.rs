@@ -1,4 +1,4 @@
-use super::intcode_computer;
+use super::intcode_computer::*;
 
 pub fn day(input: std::string::String) {
     let input_vec = input
@@ -40,6 +40,23 @@ fn get_part_two(input_vec: &Vec<i32>) -> i32 {
                         if e == a || e == b || e == c || e == d {
                             continue;
                         }
+
+                        let mut computers: Vec<Computer> = Vec::with_capacity(5);
+                        for _i in 0..5 {
+                            computers.push(Computer::new(vec![a, 0], &input_vec));
+                            computers.push(Computer::new(vec![b], &input_vec));
+                            computers.push(Computer::new(vec![c], &input_vec));
+                            computers.push(Computer::new(vec![d], &input_vec));
+                            computers.push(Computer::new(vec![e], &input_vec));
+                        }
+
+                        while !computers[4].stop {}
+
+                        let output = computers[4].output.unwrap();
+                        highest = highest.max(output);
+                        if highest == output {
+                            _highest_set = format!("a{} b{} c{} d{} e{}", a, b, c, d, e);
+                        }
                     }
                 }
             }
@@ -76,11 +93,11 @@ fn get_part_one(input_vec: &Vec<i32>) -> i32 {
                             continue;
                         }
 
-                        let amp_a = intcode_computer::Computer::simple(vec![a, 0], &input_vec);
-                        let amp_b = intcode_computer::Computer::simple(vec![b, amp_a], &input_vec);
-                        let amp_c = intcode_computer::Computer::simple(vec![c, amp_b], &input_vec);
-                        let amp_d = intcode_computer::Computer::simple(vec![d, amp_c], &input_vec);
-                        let amp_e = intcode_computer::Computer::simple(vec![e, amp_d], &input_vec);
+                        let amp_a = Computer::simple(vec![a, 0], &input_vec);
+                        let amp_b = Computer::simple(vec![b, amp_a], &input_vec);
+                        let amp_c = Computer::simple(vec![c, amp_b], &input_vec);
+                        let amp_d = Computer::simple(vec![d, amp_c], &input_vec);
+                        let amp_e = Computer::simple(vec![e, amp_d], &input_vec);
 
                         highest = highest.max(amp_e);
 

@@ -3,11 +3,26 @@ pub struct Computer {
     registers: Vec<i32>,
     input: Vec<i32>,
     instruction_pointer: usize,
-    output: Option<i32>,
-    stop: bool,
+    pub output: Option<i32>,
+    pub stop: bool,
 }
 
 impl Computer {
+    pub fn new(input: Vec<i32>, input_registers: &Vec<i32>) -> Computer {
+        let mut inputs = input.clone();
+        inputs.reverse();
+
+        let computer = Computer {
+            registers: input_registers.to_vec(),
+            input: inputs,
+            instruction_pointer: 0,
+            output: None,
+            stop: false,
+        };
+
+        computer
+    }
+
     pub fn empty() -> Computer {
         Computer {
             registers: Vec::new(),
@@ -19,18 +34,7 @@ impl Computer {
     }
 
     pub fn simple(input: Vec<i32>, input_registers: &Vec<i32>) -> i32 {
-        let mut inputs = input.clone();
-        inputs.reverse();
-
-        let mut computer = Computer {
-            registers: input_registers.to_vec(),
-            input: inputs,
-            instruction_pointer: 0,
-            output: None,
-            stop: false,
-        };
-
-        computer.compute()
+        Computer::new(input, input_registers).compute()
     }
 
     pub fn compute(&mut self) -> i32 {
