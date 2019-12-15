@@ -3,7 +3,7 @@ use super::intcode_computer;
 pub fn day(input: std::string::String) {
     let input_vec = input
         .split(",")
-        .map(|x| x.parse::<i32>().unwrap_or_default())
+        .map(|x| x.parse::<i64>().unwrap_or_default())
         .collect::<Vec<_>>();
 
     println!(

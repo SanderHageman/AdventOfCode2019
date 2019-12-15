@@ -3,7 +3,7 @@ use super::intcode_computer;
 pub fn day(input: std::string::String) {
     let input_vec = input
         .split(",")
-        .map(|x| x.parse::<i32>().unwrap_or_default())
+        .map(|x| x.parse::<i64>().unwrap_or_default())
         .collect::<Vec<_>>();
 
     let mut result1_input = input_vec.clone();
@@ -17,7 +17,7 @@ pub fn day(input: std::string::String) {
     println!("Day 2 Result2: {:?}", part_two(&input_vec));
 }
 
-fn part_two(input_vec: &Vec<i32>) -> i32 {
+fn part_two(input_vec: &Vec<i64>) -> i64 {
     let part_two_target = 19690720;
 
     let mut result2_input = input_vec.clone();

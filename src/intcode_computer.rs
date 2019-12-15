@@ -1,16 +1,16 @@
 #[derive(Debug)]
 pub struct Computer {
-    registers: Vec<i32>,
-    input: Vec<i32>,
+    registers: Vec<i64>,
+    input: Vec<i64>,
     instruction_pointer: usize,
-    relative_base: i32,
-    pub output: Option<i32>,
+    relative_base: i64,
+    pub output: Option<i64>,
     pub stop: bool,
     pub pause: bool,
 }
 
 impl Computer {
-    pub fn new(input: Vec<i32>, input_registers: &Vec<i32>) -> Computer {
+    pub fn new(input: Vec<i64>, input_registers: &Vec<i64>) -> Computer {
         let mut inputs = input.clone();
         inputs.reverse();
 
@@ -39,11 +39,11 @@ impl Computer {
         }
     }
 
-    pub fn simple(input: Vec<i32>, input_registers: &Vec<i32>) -> i32 {
+    pub fn simple(input: Vec<i64>, input_registers: &Vec<i64>) -> i64 {
         Computer::new(input, input_registers).compute()
     }
 
-    pub fn compute(&mut self) -> i32 {
+    pub fn compute(&mut self) -> i64 {
         while !self.stop {
             let opcode = Instruction::new(self.instruction_pointer, &self.registers);
             self.instruction_pointer += self.run_instruction(opcode);
@@ -52,7 +52,7 @@ impl Computer {
         self.output.unwrap_or(self.registers[0])
     }
 
-    pub fn compute_til_output(&mut self) -> i32 {
+    pub fn compute_til_output(&mut self) -> i64 {
         if self.pause {
             self.pause = false;
         }
@@ -65,7 +65,7 @@ impl Computer {
         self.output.unwrap()
     }
 
-    pub fn add_input(&mut self, input: i32) {
+    pub fn add_input(&mut self, input: i64) {
         self.input.insert(0, input)
     }
 
@@ -160,7 +160,7 @@ impl Computer {
 }
 
 impl Instruction {
-    fn new(index: usize, result_vec: &Vec<i32>) -> Instruction {
+    fn new(index: usize, result_vec: &Vec<i64>) -> Instruction {
         Instruction {
             instruction_index: index,
             opcode: Instruction::get_input_value(result_vec[index], 0, 2),
@@ -170,11 +170,11 @@ impl Instruction {
         }
     }
 
-    fn get_input_value(input: i32, position: u32, count: u32) -> i32 {
-        (input / i32::pow(10, position)) % i32::pow(10, count)
+    fn get_input_value(input: i64, position: u32, count: u32) -> i64 {
+        (input / i64::pow(10, position)) % i64::pow(10, count)
     }
 
-    fn get_parameter_one(self, relative_base: i32, result_vec: &Vec<i32>) -> i32 {
+    fn get_parameter_one(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
         let offset = 1;
         match self.paramode_one {
             0 => result_vec[result_vec[self.instruction_index + offset] as usize],
@@ -187,7 +187,7 @@ impl Instruction {
         }
     }
 
-    fn get_parameter_two(self, relative_base: i32, result_vec: &Vec<i32>) -> i32 {
+    fn get_parameter_two(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
         let offset = 2;
         match self.paramode_two {
             0 => result_vec[result_vec[self.instruction_index + offset] as usize],
@@ -200,7 +200,7 @@ impl Instruction {
         }
     }
 
-    fn _get_parameter_three(self, relative_base: i32, result_vec: &Vec<i32>) -> i32 {
+    fn _get_parameter_three(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
         let offset = 3;
         match self.paramode_thr {
             0 => result_vec[result_vec[self.instruction_index + offset] as usize],
@@ -217,8 +217,8 @@ impl Instruction {
 #[derive(Debug, Copy, Clone)]
 struct Instruction {
     instruction_index: usize,
-    opcode: i32,
-    paramode_one: i32,
-    paramode_two: i32,
-    paramode_thr: i32,
+    opcode: i64,
+    paramode_one: i64,
+    paramode_two: i64,
+    paramode_thr: i64,
 }

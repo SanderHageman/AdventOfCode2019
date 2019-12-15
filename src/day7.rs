@@ -4,14 +4,14 @@ pub fn day(input: std::string::String) {
     let input_vec = input
         .trim()
         .split(",")
-        .map(|x| x.parse::<i32>().unwrap_or_default())
+        .map(|x| x.parse::<i64>().unwrap_or_default())
         .collect::<Vec<_>>();
 
     println!("Day 7 Result1: {:?}", get_part_one(&input_vec));
     println!("Day 7 Result2: {:?}", get_part_two(&input_vec));
 }
 
-fn get_part_two(input_vec: &Vec<i32>) -> i32 {
+fn get_part_two(input_vec: &Vec<i64>) -> i64 {
     let mut highest = 0;
     let mut _highest_set: String = Default::default();
 
@@ -76,7 +76,7 @@ fn get_part_two(input_vec: &Vec<i32>) -> i32 {
     highest
 }
 
-fn get_part_one(input_vec: &Vec<i32>) -> i32 {
+fn get_part_one(input_vec: &Vec<i64>) -> i64 {
     let mut highest = 0;
     let mut _highest_set: String = Default::default();
 
