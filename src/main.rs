@@ -4,6 +4,7 @@ use std::fs;
 mod intcode_computer;
 
 mod day1;
+mod day10;
 mod day2;
 mod day3;
 mod day4;
@@ -31,6 +32,8 @@ fn main() {
     day8::day(get_input(8));
     println!("");
     day9::day(get_input(9));
+    println!("");
+    day10::day(get_input(10));
 }
 
 fn get_input(day: usize) -> String {
