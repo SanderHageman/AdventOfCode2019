@@ -10,12 +10,19 @@ pub struct Computer {
 }
 
 impl Computer {
-    pub fn new(input: Vec<i64>, input_registers: &Vec<i64>) -> Computer {
+    pub fn new(input: Vec<i64>, input_registers: &Vec<i64>, min_length: usize) -> Computer {
         let mut inputs = input.clone();
         inputs.reverse();
 
+        let mut input = input_registers.to_vec();
+        if min_length != 0 && input.len() <= min_length as usize {
+            for _i in input.len()..=min_length as usize {
+                input.push(0);
+            }
+        }
+
         let computer = Computer {
-            registers: input_registers.to_vec(),
+            registers: input,
             input: inputs,
             instruction_pointer: 0,
             relative_base: 0,
@@ -40,7 +47,7 @@ impl Computer {
     }
 
     pub fn simple(input: Vec<i64>, input_registers: &Vec<i64>) -> i64 {
-        Computer::new(input, input_registers).compute()
+        Computer::new(input, input_registers, 0).compute()
     }
 
     pub fn compute(&mut self) -> i64 {
@@ -80,23 +87,53 @@ impl Computer {
         match opcode.opcode {
             1 => {
                 instruction_count = 4;
-                let set_index = self.registers[pointer + 3] as usize;
 
                 let param_one = opcode.get_parameter_one(self.relative_base, &self.registers);
                 let param_two = opcode.get_parameter_two(self.relative_base, &self.registers);
+
+                let offset = 3i64;
+                let set_index = match opcode.paramode_thr {
+                    0 => self.registers[pointer + offset as usize] as usize,
+                    2 => {
+                        (self.registers[(pointer as i64 + offset) as usize] + self.relative_base)
+                            as usize
+                    }
+                    _ => panic!("Unable to set for {:?}"),
+                };
+
                 self.registers[set_index] = param_one + param_two;
             }
             2 => {
                 instruction_count = 4;
-                let set_index = self.registers[pointer + 3] as usize;
 
                 let param_one = opcode.get_parameter_one(self.relative_base, &self.registers);
                 let param_two = opcode.get_parameter_two(self.relative_base, &self.registers);
+
+                let offset = 3i64;
+                let set_index = match opcode.paramode_thr {
+                    0 => self.registers[pointer + offset as usize] as usize,
+                    2 => {
+                        (self.registers[(pointer as i64 + offset) as usize] + self.relative_base)
+                            as usize
+                    }
+                    _ => panic!("Unable to set for {:?}"),
+                };
+
                 self.registers[set_index] = param_one * param_two;
             }
             3 => {
                 instruction_count = 2;
-                let set_index = self.registers[pointer + 1] as usize;
+
+                let offset = 1i64;
+                let set_index = match opcode.paramode_one {
+                    0 => self.registers[pointer + offset as usize] as usize,
+                    2 => {
+                        (self.registers[(pointer as i64 + offset) as usize] + self.relative_base)
+                            as usize
+                    }
+                    _ => panic!("Unable to set for {:?}"),
+                };
+
                 self.registers[set_index] = self.input.pop().unwrap();
             }
             4 => {
@@ -133,7 +170,16 @@ impl Computer {
                 let set = opcode.get_parameter_one(self.relative_base, &self.registers)
                     < opcode.get_parameter_two(self.relative_base, &self.registers);
 
-                let set_index = self.registers[pointer + 3] as usize;
+                let offset = 3i64;
+                let set_index = match opcode.paramode_thr {
+                    0 => self.registers[pointer + offset as usize] as usize,
+                    2 => {
+                        (self.registers[(pointer as i64 + offset) as usize] + self.relative_base)
+                            as usize
+                    }
+                    _ => panic!("Unable to set for {:?}"),
+                };
+
                 self.registers[set_index] = if set { 1 } else { 0 };
             }
             8 => {
@@ -141,7 +187,16 @@ impl Computer {
                 let set = opcode.get_parameter_one(self.relative_base, &self.registers)
                     == opcode.get_parameter_two(self.relative_base, &self.registers);
 
-                let set_index = self.registers[pointer + 3] as usize;
+                let offset = 3i64;
+                let set_index = match opcode.paramode_thr {
+                    0 => self.registers[pointer + offset as usize] as usize,
+                    2 => {
+                        (self.registers[(pointer as i64 + offset) as usize] + self.relative_base)
+                            as usize
+                    }
+                    _ => panic!("Unable to set for {:?}"),
+                };
+
                 self.registers[set_index] = if set { 1 } else { 0 };
             }
             9 => {
@@ -174,43 +229,33 @@ impl Instruction {
         (input / i64::pow(10, position)) % i64::pow(10, count)
     }
 
-    fn get_parameter_one(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
-        let offset = 1;
-        match self.paramode_one {
-            0 => result_vec[result_vec[self.instruction_index + offset] as usize],
-            1 => result_vec[self.instruction_index + offset],
-            2 => {
-                result_vec
-                    [result_vec[self.instruction_index + offset + relative_base as usize] as usize]
-            }
+    fn get_parameter(
+        self,
+        offset: usize,
+        paramode: i64,
+        relative_base: i64,
+        result_vec: &Vec<i64>,
+    ) -> i64 {
+        let index = self.instruction_index + offset;
+
+        match paramode {
+            0 => result_vec[result_vec[index] as usize],
+            1 => result_vec[index],
+            2 => result_vec[(result_vec[index] + relative_base) as usize],
             _ => panic!("uncovered parameter mode {:?}", self),
         }
+    }
+
+    fn get_parameter_one(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
+        self.get_parameter(1, self.paramode_one, relative_base, &result_vec)
     }
 
     fn get_parameter_two(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
-        let offset = 2;
-        match self.paramode_two {
-            0 => result_vec[result_vec[self.instruction_index + offset] as usize],
-            1 => result_vec[self.instruction_index + offset],
-            2 => {
-                result_vec
-                    [result_vec[self.instruction_index + offset + relative_base as usize] as usize]
-            }
-            _ => panic!("uncovered parameter mode {:?}", self),
-        }
+        self.get_parameter(2, self.paramode_two, relative_base, &result_vec)
     }
 
     fn _get_parameter_three(self, relative_base: i64, result_vec: &Vec<i64>) -> i64 {
-        let offset = 3;
-        match self.paramode_thr {
-            0 => result_vec[result_vec[self.instruction_index + offset] as usize],
-            1 => result_vec[self.instruction_index + offset],
-            2 => {
-                result_vec
-                    [result_vec[self.instruction_index + offset + relative_base as usize] as usize]
-            }
-            _ => panic!("uncovered parameter mode {:?}", self),
-        }
+        self.get_parameter(3, self.paramode_thr, relative_base, &result_vec)
     }
 }
 

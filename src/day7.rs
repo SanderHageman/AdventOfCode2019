@@ -40,11 +40,11 @@ fn get_part_two(input_vec: &Vec<i64>) -> i64 {
 
                         let mut computers: Vec<Computer> = Vec::with_capacity(5);
                         for _i in 0..5 {
-                            computers.push(Computer::new(vec![a, 0], &input_vec));
-                            computers.push(Computer::new(vec![b], &input_vec));
-                            computers.push(Computer::new(vec![c], &input_vec));
-                            computers.push(Computer::new(vec![d], &input_vec));
-                            computers.push(Computer::new(vec![e], &input_vec));
+                            computers.push(Computer::new(vec![a, 0], &input_vec, 0));
+                            computers.push(Computer::new(vec![b], &input_vec, 0));
+                            computers.push(Computer::new(vec![c], &input_vec, 0));
+                            computers.push(Computer::new(vec![d], &input_vec, 0));
+                            computers.push(Computer::new(vec![e], &input_vec, 0));
                         }
 
                         let mut output = computers[0].compute_til_output();
