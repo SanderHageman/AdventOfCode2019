@@ -7,11 +7,8 @@ pub fn day(input: std::string::String) {
         .map(|x| x.parse::<i32>().unwrap_or_default())
         .collect::<Vec<_>>();
 
-    let result_one = get_part_one(&input_vec);
-    let result_two = 0;
-
-    println!("Day 7 Result1: {:?}", result_one);
-    println!("Day 7 Result2: {:?}", result_two);
+    println!("Day 7 Result1: {:?}", get_part_one(&input_vec));
+    println!("Day 7 Result2: {:?}", get_part_two(&input_vec));
 }
 
 fn get_part_two(input_vec: &Vec<i32>) -> i32 {
@@ -50,7 +47,20 @@ fn get_part_two(input_vec: &Vec<i32>) -> i32 {
                             computers.push(Computer::new(vec![e], &input_vec));
                         }
 
-                        while !computers[4].stop {}
+                        let mut output = computers[0].compute_til_output();
+
+                        // warmup
+                        for i in 1..5 {
+                            computers[i].add_input(output);
+                            output = computers[i].compute_til_output();
+                        }
+
+                        while !computers[4].stop {
+                            for i in 0..5 {
+                                computers[i].add_input(output);
+                                output = computers[i].compute_til_output();
+                            }
+                        }
 
                         let output = computers[4].output.unwrap();
                         highest = highest.max(output);
