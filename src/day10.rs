@@ -1,4 +1,5 @@
 use cgmath::*;
+use std::collections::HashSet;
 
 pub fn day(input: std::string::String) {
     let input_vec = input.lines().collect::<Vec<_>>();
@@ -35,10 +36,10 @@ pub fn day(input: std::string::String) {
         }
     }
 
-    let result_one = get_xy(max_i, w, h);
+    let result_one = max;
     let result_two = 0;
 
-    println!("Day 10 Result1: {:?}", result_one);
+    println!("Day 10 Result1: {:?} {:?}", result_one, get_xy(max_i, w, h));
     println!("Day 10 Result2: {:?}", result_two);
 }
 
@@ -50,69 +51,27 @@ fn get_see(iter: (usize, &bool), grid_width: usize, grid_height: usize, grid: &V
     }
 
     let (x_index, y_index) = get_xy(index, grid_width, grid_height);
+    let origin = Vector2::new(x_index as f32, y_index as f32);
+    let base = Vector2::new(x_index as f32, (y_index + 1) as f32);
 
-    let mut result = 0;
+    let mut result_angle = HashSet::<i32>::new();
 
-    // only check for edges
-    for x in 0..grid_width {
-        let origin = Vector2::new(x_index as f64, y_index as f64);
-        let extreme_one = Vector2::new(x as f64, 0f64);
-        let extreme_two = Vector2::new(x as f64, (grid_height - 1) as f64);
+    let size = grid_width * grid_height;
 
-        let direction_one = (extreme_one - origin).normalize();
-        let direction_two = (extreme_two - origin).normalize();
-
-        if has_on_line(&origin, &direction_one, grid_width, grid_height, &grid) {
-            result += 1;
-        }
-
-        if has_on_line(&origin, &direction_two, grid_width, grid_height, &grid) {
-            result += 1;
-        }
-    }
-
-    for y in 0..grid_height {
-        let origin = Vector2::new(x_index as f64, y_index as f64);
-        let extreme_one = Vector2::new(0f64, y as f64);
-        let extreme_two = Vector2::new((grid_width - 1) as f64, y as f64);
-
-        let direction_one = (extreme_one - origin).normalize();
-        let direction_two = (extreme_two - origin).normalize();
-
-        if has_on_line(&origin, &direction_one, grid_width, grid_height, &grid) {
-            result += 1;
-        }
-
-        if has_on_line(&origin, &direction_two, grid_width, grid_height, &grid) {
-            result += 1;
-        }
-    }
-
-    result
-}
-
-fn has_on_line(
-    origin: &Vector2<f64>,
-    target_direction: &Vector2<f64>,
-    grid_width: usize,
-    grid_height: usize,
-    grid: &Vec<bool>,
-) -> bool {
-    for i in 0..grid.len() {
-        if !grid[i] {
+    for i in 0..size {
+        if i == index || !grid[i] {
             continue;
         }
 
         let (x, y) = get_xy(i, grid_width, grid_height);
-        let point = Vector2::new(x as f64, y as f64);
+        let target = Vector2::new(x as f32, y as f32);
+        let diff = target - origin;
+        let angle = diff.angle(base);
 
-        let direction = (point - origin).normalize();
-        if direction == *target_direction {
-            return true;
-        }
+        result_angle.insert(canon_angle(angle.0));
     }
 
-    false
+    result_angle.len() as u32
 }
 
 fn get_xy(index: usize, width: usize, height: usize) -> (usize, usize) {
@@ -121,14 +80,6 @@ fn get_xy(index: usize, width: usize, height: usize) -> (usize, usize) {
     (x, y)
 }
 
-fn get_on_line(
-    line_start: Vector2<f64>,
-    line_end: Vector2<f64>,
-    point: Vector2<f64>,
-) -> (bool, f64) {
-    let dist = (line_start - point).magnitude2();
-    (
-        dist + (line_end - point).magnitude2() == (line_end - line_start).magnitude2(),
-        dist,
-    )
+fn canon_angle(angle: f32) -> i32 {
+    (angle * 1024.0 * 1024.0).round() as i32
 }
