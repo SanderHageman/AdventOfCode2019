@@ -87,6 +87,11 @@ impl Computer {
         self.input.insert(0, input)
     }
 
+    pub fn set_input(&mut self, input: i64) {
+        self.input.clear();
+        self.add_input(input);
+    }
+
     fn run_instruction(&mut self, opcode: Instruction) -> usize {
         if (opcode.opcode > 9 || opcode.opcode < 0) && opcode.opcode != 99 {
             panic!("opcode out of range {:?}", opcode);

@@ -42,6 +42,7 @@ impl Arcade {
         Arcade {
             computer: computer,
             screen: BTreeMap::new(),
+            joystick: JoyStick::new(),
             screen_width: 0,
             screen_height: 0,
             score: 0,
@@ -60,6 +61,8 @@ impl Arcade {
         } else {
             self.put(tick_data);
         }
+
+        self.update_input();
     }
 
     fn tick(&mut self) -> ((i64, i64), usize) {
@@ -80,15 +83,13 @@ impl Arcade {
                     self.screen_height = self.screen.len() / self.screen_width;
                     self.draw();
                 }
-                let wait = time::Duration::from_millis(150);
-                thread::sleep(wait);
                 self.draw();
             }
             None => {}
         }
     }
 
-    fn draw(&self) {
+    fn draw(&mut self) {
         let mut current_display: Vec<usize> = vec![];
 
         let w = self.screen_width;
@@ -96,11 +97,20 @@ impl Arcade {
 
         for i in 0..size {
             let pos = Arcade::get_xy(i, w);
-            current_display.push(self.screen.get(&pos).unwrap().to_owned());
+            let pixel = self.screen.get(&pos).unwrap().to_owned();
+            match pixel {
+                3 => self.joystick.set_paddlex(pos.0),
+                4 => self.joystick.set_ballx(pos.0),
+                _ => {}
+            }
+            current_display.push(pixel);
         }
 
-        println!("{}[2J", 27 as char);
-        Arcade::draw_image(self.screen_width, &current_display);
+        // Arcade::draw_image(self.screen_width, &current_display);
+    }
+
+    fn update_input(&mut self) {
+        self.computer.set_input(self.joystick.get_input());
     }
 
     fn get_screen_width(&self) -> usize {
@@ -115,6 +125,8 @@ impl Arcade {
     }
 
     fn draw_image(width: usize, image: &Vec<usize>) {
+        //clear screen
+        println!("{}[2J", 27 as char);
         let mut data = String::new();
 
         for i in 0..image.len() {
@@ -123,18 +135,22 @@ impl Arcade {
             }
 
             let (put1, put2) = match image[i] {
-                0 => ('░', '░'),
-                1 => ('▓', '▓'),
-                2 => ('█', '█'),
-                3 => ('▂', '▂'),
-                4 => ('▗', '▖'),
+                0 => ('░', '░'), // empty
+                1 => ('▓', '▓'), // wall
+                2 => ('█', '█'), // block
+                3 => ('▂', '▂'), // paddle
+                4 => ('▗', '▖'), // ball
                 _ => panic!("pixel out of range"),
             };
 
             data.push_str(&format!("{}{}", put1, put2));
         }
 
-        println!("{}", data);
+        println!("\n{}\n", data);
+
+        // make it viewable
+        let wait = time::Duration::from_millis(33);
+        thread::sleep(wait);
     }
 
     fn get_xy(index: usize, width: usize) -> (i64, i64) {
@@ -144,11 +160,44 @@ impl Arcade {
     }
 }
 
-#[derive(Debug)]
 struct Arcade {
     computer: Computer,
     screen: BTreeMap<(i64, i64), usize>,
+    joystick: JoyStick,
     screen_width: usize,
     screen_height: usize,
     score: usize,
+}
+
+impl JoyStick {
+    fn new() -> JoyStick {
+        JoyStick {
+            paddlex: 0,
+            ballx: 0,
+        }
+    }
+
+    fn set_ballx(&mut self, x: i64) {
+        self.ballx = x;
+    }
+
+    fn set_paddlex(&mut self, x: i64) {
+        self.paddlex = x;
+    }
+
+    fn get_input(&self) -> i64 {
+        if self.paddlex > self.ballx {
+            -1
+        } else if self.paddlex < self.ballx {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+#[derive(Debug)]
+struct JoyStick {
+    paddlex: i64,
+    ballx: i64,
 }
