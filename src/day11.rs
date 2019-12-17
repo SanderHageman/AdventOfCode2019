@@ -3,12 +3,8 @@ use cgmath::*;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
-pub fn day(input: std::string::String) {
-    let input_vec = input
-        .trim()
-        .split(",")
-        .map(|x| x.parse::<i64>().unwrap())
-        .collect::<Vec<_>>();
+pub fn day(input: String) {
+    let input_vec = Computer::parse_input(input);
 
     let result_one = get_part_one(&input_vec);
     let (image_width, color_vec) = get_part_two(&input_vec);

@@ -10,6 +10,14 @@ pub struct Computer {
 }
 
 impl Computer {
+    pub fn parse_input(input: String) -> Vec<i64> {
+        input
+            .trim()
+            .split(",")
+            .map(|x| x.parse::<i64>().unwrap())
+            .collect::<Vec<_>>()
+    }
+
     pub fn new(input: Vec<i64>, input_registers: &Vec<i64>, min_length: usize) -> Computer {
         let mut inputs = input.clone();
         inputs.reverse();

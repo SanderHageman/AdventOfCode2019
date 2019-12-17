@@ -1,10 +1,7 @@
-use super::intcode_computer;
+use super::intcode_computer::*;
 
 pub fn day(input: std::string::String) {
-    let input_vec = input
-        .split(",")
-        .map(|x| x.parse::<i64>().unwrap_or_default())
-        .collect::<Vec<_>>();
+    let input_vec = Computer::parse_input(input);
 
     let mut result1_input = input_vec.clone();
     result1_input[1] = 12;
@@ -12,7 +9,7 @@ pub fn day(input: std::string::String) {
 
     println!(
         "Day 2 Result1: {:?}",
-        intcode_computer::Computer::simple(vec![0, 0], &result1_input)
+        Computer::simple(vec![0, 0], &result1_input)
     );
     println!("Day 2 Result2: {:?}", part_two(&input_vec));
 }
@@ -27,7 +24,7 @@ fn part_two(input_vec: &Vec<i64>) -> i64 {
             result2_input[1] = x;
             result2_input[2] = y;
 
-            if intcode_computer::Computer::simple(vec![0, 0], &result2_input) == part_two_target {
+            if Computer::simple(vec![0, 0], &result2_input) == part_two_target {
                 return 100 * x + y;
             }
         }
