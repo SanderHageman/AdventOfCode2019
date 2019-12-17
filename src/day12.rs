@@ -1,5 +1,5 @@
 use cgmath::*;
-use std::string::*;
+use num::Integer;
 
 type Vec3 = Vector3<i32>;
 
@@ -7,7 +7,7 @@ pub fn day(input: String) {
     let moon_input = parse(input);
 
     let result_one = get_part_one(&moon_input);
-    let result_two = 0;
+    let result_two = get_part_two(&moon_input);
 
     println!("Day 12 Result1: {:?}", result_one);
     println!("Day 12 Result2: {:?}", result_two);
@@ -37,6 +37,50 @@ fn get_part_one(moon_input: &Vec<Moon>) -> i32 {
     }
 
     total_energy
+}
+
+fn get_part_two(moon_input: &Vec<Moon>) -> u64 {
+    let check = moon_input.clone();
+    let mut moon_vec = moon_input.clone();
+
+    let mut icount = 0u64;
+
+    let mut counts = [0, 0, 0];
+
+    while counts[0] == 0 || counts[1] == 0 || counts[2] == 0 {
+        icount += 1;
+        let moon_copy = moon_vec.clone();
+
+        for i in 0..4 {
+            for other_moon in &moon_copy {
+                moon_vec[i].update_velocity(other_moon)
+            }
+        }
+
+        for i in 0..4 {
+            moon_vec[i].apply_velocity();
+        }
+
+        for i in 0..3 {
+            if counts[i] == 0 && are_eq(i, &moon_vec, &check) {
+                counts[i] = icount;
+            }
+        }
+    }
+
+    counts[0].lcm(&counts[1].lcm(&counts[2]))
+}
+
+fn are_eq(index: usize, current: &Vec<Moon>, original: &Vec<Moon>) -> bool {
+    for i in 0..current.len() {
+        if current[i].pos[index] != original[i].pos[index] {
+            return false;
+        } else if current[i].vel[index] != original[i].vel[index] {
+            return false;
+        }
+    }
+
+    true
 }
 
 #[derive(Debug, Clone)]
