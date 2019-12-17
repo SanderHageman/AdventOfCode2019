@@ -19,6 +19,8 @@ pub fn day(input: std::string::String) {
         .map(|c| c == '#')
         .collect::<Vec<_>>();
 
+    assert_eq!(grid_one_d.len(), w * h);
+
     let can_see = grid_one_d
         .iter()
         .enumerate()
@@ -50,9 +52,18 @@ fn get_see(iter: (usize, &bool), grid_width: usize, grid_height: usize, grid: &V
         return 0;
     }
 
+    get_see_angles(index, grid_width, grid_height, &grid).len() as u32
+}
+
+fn get_see_angles(
+    index: usize,
+    grid_width: usize,
+    grid_height: usize,
+    grid: &Vec<bool>,
+) -> HashSet<i32> {
     let (x_index, y_index) = get_xy(index, grid_width, grid_height);
     let origin = Vector2::new(x_index as f32, y_index as f32);
-    let base = Vector2::new(x_index as f32, (y_index + 1) as f32);
+    let base = Vector2::new(x_index as f32, y_index as f32 - 1f32);
 
     let mut result_angle = HashSet::<i32>::new();
 
@@ -71,7 +82,7 @@ fn get_see(iter: (usize, &bool), grid_width: usize, grid_height: usize, grid: &V
         result_angle.insert(canon_angle(angle.0));
     }
 
-    result_angle.len() as u32
+    result_angle
 }
 
 fn get_xy(index: usize, width: usize, height: usize) -> (usize, usize) {
