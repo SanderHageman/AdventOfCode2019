@@ -64,12 +64,15 @@ impl Computer {
             self.pause = false;
         }
 
-        while !self.pause {
+        while !self.pause && !self.stop {
             let opcode = Instruction::new(self.instruction_pointer, &self.registers);
             self.instruction_pointer += self.run_instruction(opcode);
         }
 
-        self.output.unwrap()
+        match self.output {
+            Some(val) => val,
+            None => panic!("No output to return!"),
+        }
     }
 
     pub fn add_input(&mut self, input: i64) {
@@ -134,7 +137,10 @@ impl Computer {
                     _ => panic!("Unable to set for {:?}"),
                 };
 
-                self.registers[set_index] = self.input.pop().unwrap();
+                match self.input.pop() {
+                    Some(val) => self.registers[set_index] = val,
+                    None => panic!("Not enough input provided"),
+                }
             }
             4 => {
                 instruction_count = 2;
