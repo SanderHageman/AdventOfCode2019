@@ -1,11 +1,12 @@
 use super::intcode_computer::*;
 use std::collections::BTreeMap;
+use std::{thread, time};
 
 pub fn day(input: String) {
     let input_vec = Computer::parse_input(input);
 
     let result_one = get_part_one(&input_vec);
-    let result_two = 0;
+    let result_two = get_part_two(&input_vec);
 
     println!("Day 13 Result1: {:?}", result_one);
     println!("Day 13 Result2: {:?}", result_two);
@@ -21,6 +22,21 @@ fn get_part_one(input_vec: &Vec<i64>) -> usize {
     arcade.screen.iter().filter(|x| *x.1 == 2).count()
 }
 
+fn get_part_two(input_vec: &Vec<i64>) -> usize {
+    let mut register = input_vec.clone();
+
+    //enable free play
+    register[0] = 2;
+
+    let mut arcade = Arcade::new(Computer::new(vec![0], &register, 3000));
+
+    while arcade.keep_update() {
+        arcade.update();
+    }
+
+    arcade.score
+}
+
 impl Arcade {
     fn new(computer: Computer) -> Arcade {
         Arcade {
@@ -28,6 +44,7 @@ impl Arcade {
             screen: BTreeMap::new(),
             screen_width: 0,
             screen_height: 0,
+            score: 0,
         }
     }
 
@@ -37,7 +54,12 @@ impl Arcade {
 
     fn update(&mut self) {
         let tick_data = self.tick();
-        self.put(tick_data);
+
+        if tick_data.0 == (-1, 0) {
+            self.score = tick_data.1;
+        } else {
+            self.put(tick_data);
+        }
     }
 
     fn tick(&mut self) -> ((i64, i64), usize) {
@@ -56,7 +78,10 @@ impl Arcade {
                 if self.screen_width == 0 {
                     self.screen_width = self.get_screen_width();
                     self.screen_height = self.screen.len() / self.screen_width;
+                    self.draw();
                 }
+                let wait = time::Duration::from_millis(150);
+                thread::sleep(wait);
                 self.draw();
             }
             None => {}
@@ -74,6 +99,7 @@ impl Arcade {
             current_display.push(self.screen.get(&pos).unwrap().to_owned());
         }
 
+        println!("{}[2J", 27 as char);
         Arcade::draw_image(self.screen_width, &current_display);
     }
 
@@ -89,9 +115,11 @@ impl Arcade {
     }
 
     fn draw_image(width: usize, image: &Vec<usize>) {
+        let mut data = String::new();
+
         for i in 0..image.len() {
             if i % width == 0 && i != 0 {
-                print!("\n");
+                data.push_str("\n");
             }
 
             let (put1, put2) = match image[i] {
@@ -103,9 +131,10 @@ impl Arcade {
                 _ => panic!("pixel out of range"),
             };
 
-            print!("{}{}", put1, put2);
+            data.push_str(&format!("{}{}", put1, put2));
         }
-        print!("\n");
+
+        println!("{}", data);
     }
 
     fn get_xy(index: usize, width: usize) -> (i64, i64) {
@@ -121,4 +150,5 @@ struct Arcade {
     screen: BTreeMap<(i64, i64), usize>,
     screen_width: usize,
     screen_height: usize,
+    score: usize,
 }
