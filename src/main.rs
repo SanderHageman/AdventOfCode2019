@@ -6,6 +6,7 @@ mod intcode_computer;
 mod day1;
 mod day10;
 mod day11;
+mod day12;
 mod day2;
 mod day3;
 mod day4;
@@ -37,6 +38,8 @@ fn main() {
     day10::day(get_input(10));
     println!("");
     day11::day(get_input(11));
+    println!("");
+    day12::day(get_input(12));
 }
 
 fn get_input(day: usize) -> String {
