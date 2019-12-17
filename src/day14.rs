@@ -37,7 +37,7 @@ impl Chemical {
 
             for chem in &recipe.input {
                 if chem.name == "ORE" {
-                    result += chem.quantity / self.quantity;
+                    result += chem.quantity / recipe.output.quantity;
                 }
 
                 result += chem.get_required_ore(&recipes) * chem.quantity;
