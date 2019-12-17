@@ -29,8 +29,8 @@ pub fn day(input: std::string::String) {
     let result_one = visited_tiles.len();
     let result_two = 0;
 
-    println!("Day 10 Result1: {:?}", result_one);
-    println!("Day 10 Result2: {:?}", result_two);
+    println!("Day 11 Result1: {:?}", result_one);
+    println!("Day 11 Result2: {:?}", result_two);
 }
 
 impl PaintRobot {
