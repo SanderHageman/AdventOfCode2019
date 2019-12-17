@@ -51,12 +51,12 @@ pub fn day(input: std::string::String) {
         }
     }
 
-    let (rtx, rty) = get_xy(destroyed[199], w, h);
+    let (rtx, rty) = get_xy(destroyed[199], w);
 
     let result_one = max;
     let result_two = rtx * 100 + rty;
 
-    println!("Day 10 Result1: {:?} {:?}", result_one, get_xy(max_i, w, h));
+    println!("Day 10 Result1: {:?} {:?}", result_one, get_xy(max_i, w));
     println!("Day 10 Result2: {:?} {:?}", result_two, (rtx, rty));
 }
 
@@ -76,7 +76,7 @@ fn get_see_angles(
     grid_height: usize,
     grid: &Vec<bool>,
 ) -> HashSet<i32> {
-    let (x_index, y_index) = get_xy(index, grid_width, grid_height);
+    let (x_index, y_index) = get_xy(index, grid_width);
     let origin = Vector2::new(x_index as f32, y_index as f32);
     let normal = Vector2::new(0.0, -1f32);
 
@@ -89,7 +89,7 @@ fn get_see_angles(
             continue;
         }
 
-        let (x, y) = get_xy(i, grid_width, grid_height);
+        let (x, y) = get_xy(i, grid_width);
         let target = Vector2::new(x as f32, y as f32);
         let diff = target - origin;
         let mut angle = -diff.angle(normal).0.to_degrees();
@@ -112,7 +112,7 @@ fn get_closest_by_angle(
     grid_height: usize,
     grid: &Vec<bool>,
 ) -> usize {
-    let (x_index, y_index) = get_xy(origin_index, grid_width, grid_height);
+    let (x_index, y_index) = get_xy(origin_index, grid_width);
     let origin = Vector2::new(x_index as f32, y_index as f32);
     let normal = Vector2::new(0.0, -1f32);
 
@@ -125,7 +125,7 @@ fn get_closest_by_angle(
             continue;
         }
 
-        let (x, y) = get_xy(i, grid_width, grid_height);
+        let (x, y) = get_xy(i, grid_width);
         let target = Vector2::new(x as f32, y as f32);
         let diff = target - origin;
         let mut angle = -diff.angle(normal).0.to_degrees();
@@ -157,10 +157,8 @@ fn get_closest_by_angle(
     cindex
 }
 
-fn get_xy(index: usize, width: usize, height: usize) -> (usize, usize) {
-    let x = index % width;
-    let y = (index - x) / height;
-    (x, y)
+fn get_xy(index: usize, width: usize) -> (usize, usize) {
+    (index % width, index / width)
 }
 
 fn canon_angle(angle: f32) -> i32 {
