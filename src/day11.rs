@@ -11,19 +11,93 @@ pub fn day(input: std::string::String) {
         .collect::<Vec<_>>();
 
     let result_one = get_part_one(&input_vec);
-    let result_two = 0;
+    let (image_width, color_vec) = get_part_two(&input_vec);
 
     println!("Day 11 Result1: {:?}", result_one);
-    println!("Day 11 Result2: {:?}", result_two);
+    println!("Day 11 Result2");
+    draw_image(image_width, &color_vec);
 }
 
 fn get_part_one(input_vec: &Vec<i64>) -> usize {
     let mut robot = PaintRobot::new(Computer::new(vec![], &input_vec, 1500));
-    let mut visited_tiles = HashSet::<GridNode>::new();
+    let mut visited_nodes = HashSet::<GridNode>::new();
 
-    robot.paint(&mut visited_tiles);
+    robot.paint(&mut visited_nodes);
 
-    visited_tiles.len()
+    visited_nodes.len()
+}
+
+fn get_part_two(input_vec: &Vec<i64>) -> (usize, Vec<u32>) {
+    let mut robot = PaintRobot::new(Computer::new(vec![], &input_vec, 1500));
+    let mut visited_nodes = HashSet::<GridNode>::new();
+
+    visited_nodes.insert(GridNode {
+        pos: Vector2::new(0, 0),
+        color: 1,
+    });
+
+    robot.paint(&mut visited_nodes);
+
+    let mut minx = i32::max_value();
+    let mut miny = i32::max_value();
+
+    let mut maxx = i32::min_value();
+    let mut maxy = i32::min_value();
+
+    for node in &visited_nodes {
+        let x = node.pos.x;
+        let y = node.pos.y;
+
+        minx = minx.min(x);
+        miny = miny.min(y);
+
+        maxx = maxx.max(x);
+        maxy = maxy.max(y);
+    }
+    // grid is nice enough to start 0,0 so we don't need an offset
+
+    let w = maxx as usize;
+    let h = maxy as usize + 1;
+    let size = w * h;
+
+    let mut result: Vec<u32> = Vec::new();
+
+    for i in 0..size {
+        let (x, y) = get_xy(i, w);
+        let pos = Vector2::new(x, y);
+
+        let color = match visited_nodes.get(&GridNode::new(pos)) {
+            Some(val) => val.color,
+            None => 0,
+        };
+
+        result.push(color as u32);
+    }
+
+    (w as usize, result)
+}
+
+fn draw_image(width: usize, image: &Vec<u32>) {
+    for i in 0..image.len() {
+        if i % width == 0 && i != 0 {
+            print!("\n");
+        }
+
+        let put = match image[i] {
+            0 => '░',
+            1 => '█',
+            _ => panic!("pixel out of range"),
+        };
+
+        print!("{}", put);
+    }
+    print!("\n");
+}
+
+fn get_xy(index: usize, width: usize) -> (i32, i32) {
+    let x = index % width;
+    let y = index / width;
+    (x as i32, y as i32)
 }
 
 impl PaintRobot {
