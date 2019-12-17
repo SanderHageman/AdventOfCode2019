@@ -10,27 +10,20 @@ pub fn day(input: std::string::String) {
         .map(|x| x.parse::<i64>().unwrap())
         .collect::<Vec<_>>();
 
-    let mut robot = PaintRobot::new(Computer::new(vec![], &input_vec, 1500));
-
-    let mut visited_tiles = HashSet::<GridNode>::new();
-
-    while !robot.computer.stop {
-        let mut node = match visited_tiles.take(&GridNode::new(robot.pos)) {
-            Some(val) => val,
-            None => GridNode::new(robot.pos),
-        };
-
-        let target_color = robot.do_move(node.color);
-
-        node.color = target_color;
-        visited_tiles.insert(node);
-    }
-
-    let result_one = visited_tiles.len();
+    let result_one = get_part_one(&input_vec);
     let result_two = 0;
 
     println!("Day 11 Result1: {:?}", result_one);
     println!("Day 11 Result2: {:?}", result_two);
+}
+
+fn get_part_one(input_vec: &Vec<i64>) -> usize {
+    let mut robot = PaintRobot::new(Computer::new(vec![], &input_vec, 1500));
+    let mut visited_tiles = HashSet::<GridNode>::new();
+
+    robot.paint(&mut visited_tiles);
+
+    visited_tiles.len()
 }
 
 impl PaintRobot {
@@ -39,6 +32,20 @@ impl PaintRobot {
             computer: computer,
             pos: Vector2::new(0, 0),
             heading: 0,
+        }
+    }
+
+    fn paint(&mut self, tiles: &mut HashSet<GridNode>) {
+        while !self.computer.stop {
+            let mut node = match tiles.take(&GridNode::new(self.pos)) {
+                Some(val) => val,
+                None => GridNode::new(self.pos),
+            };
+
+            let target_color = self.do_move(node.color);
+
+            node.color = target_color;
+            tiles.insert(node);
         }
     }
 
