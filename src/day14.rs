@@ -1,3 +1,4 @@
+use math::round;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -8,7 +9,7 @@ pub fn day(input: String) {
     let reactions = parse(input);
 
     let result_one = get_part_one(&reactions);
-    let result_two = 3445249; //get_part_two(&reactions); took 1 hour ¯\_(ツ)_/¯
+    let result_two = get_part_two(&reactions, result_one);
 
     println!("Day 14 Result1: {:?}", result_one);
     println!("Day 14 Result2: {:?}", result_two);
@@ -16,36 +17,45 @@ pub fn day(input: String) {
 
 fn get_part_one(reactions: &Vec<Reaction>) -> i64 {
     let mut laboratory = Laboratory::new(&reactions);
-    laboratory.get_chemical(&Chemical {
+    laboratory.consume_chemical(&Chemical {
         name: "FUEL".to_owned(),
         quantity: 1,
     });
 
-    laboratory.ore_count
+    laboratory.consumed_ore_count
 }
 
-fn get_part_two(reactions: &Vec<Reaction>) -> i64 {
-    let mut laboratory = Laboratory::new(&reactions);
+fn get_part_two(reactions: &Vec<Reaction>, part_one_result: i64) -> i64 {
+    const TOTAL_ORE_COUNT: i64 = 1000000000000;
+    const HIGH_FACTOR: f64 = 1.5;
 
-    laboratory.limited_ore = true;
-    laboratory.ore_count = 1000000000000;
-
-    let mut icount = 0;
+    let mut low = round::ceil(TOTAL_ORE_COUNT as f64 / part_one_result as f64, 0) as i64;
+    let mut high = round::ceil(low as f64 * HIGH_FACTOR as f64, 0) as i64;
+    let mut mid = (low + high) / 2;
 
     loop {
-        laboratory.get_chemical(&Chemical {
+        let mut laboratory = Laboratory::new(&reactions);
+
+        laboratory.consume_chemical(&Chemical {
             name: "FUEL".to_owned(),
-            quantity: 1,
+            quantity: mid,
         });
 
-        if laboratory.ore_count > 0 {
-            icount += 1;
-        } else {
-            break;
-        }
-    }
+        let consumed_ore = laboratory.consumed_ore_count;
+        let diff = TOTAL_ORE_COUNT - consumed_ore;
 
-    icount
+        if diff.abs() < part_one_result {
+            return mid;
+        }
+
+        mid = if diff > 0 {
+            low = mid;
+            (mid + high) / 2
+        } else {
+            high = mid;
+            (low + mid) / 2
+        };
+    }
 }
 
 impl Laboratory {
@@ -67,12 +77,11 @@ impl Laboratory {
         Laboratory {
             inventory: HashSet::new(),
             recipes: recipes,
-            ore_count: 0,
-            limited_ore: false,
+            consumed_ore_count: 0,
         }
     }
 
-    fn get_chemical(&mut self, chemical: &Chemical) {
+    fn consume_chemical(&mut self, chemical: &Chemical) {
         let mut from_inventory = match self.inventory.take(&chemical) {
             Some(val) => val,
             None => self.create_chemical(&chemical.name),
@@ -94,28 +103,23 @@ impl Laboratory {
 
     fn run_recipe(&mut self, name: &str, quantity_required: i64) -> i64 {
         if name == "ORE" {
-            if self.limited_ore {
-                self.ore_count -= quantity_required;
-            } else {
-                self.ore_count += quantity_required;
-            }
+            self.consumed_ore_count += quantity_required;
             return 0;
         }
 
         let recipe = self.recipes.get(name).unwrap().to_owned();
-        let mut qty = 0;
 
-        while qty < quantity_required {
-            for input in &recipe.input {
-                self.get_chemical(input);
-            }
+        let per_recipe_output = recipe.output.quantity;
+        let cycle_count =
+            round::ceil(quantity_required as f64 / per_recipe_output as f64, 0) as i64;
 
-            qty += recipe.output.quantity;
+        for input in &recipe.input {
+            let mut request = input.to_owned();
+            request.quantity *= cycle_count;
+            self.consume_chemical(&request);
         }
 
-        qty -= quantity_required;
-
-        qty
+        (recipe.output.quantity * cycle_count) - quantity_required
     }
 
     fn create_chemical(&mut self, name: &str) -> Chemical {
@@ -130,8 +134,7 @@ impl Laboratory {
 struct Laboratory {
     inventory: HashSet<Chemical>,
     recipes: HashMap<String, Reaction>,
-    ore_count: i64,
-    limited_ore: bool,
+    consumed_ore_count: i64,
 }
 
 #[derive(Debug, Clone, Eq)]
