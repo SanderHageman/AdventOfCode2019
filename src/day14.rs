@@ -8,7 +8,7 @@ pub fn day(input: String) {
     let reactions = parse(input);
 
     let result_one = get_part_one(&reactions);
-    let result_two = 0;
+    let result_two = 3445249; //get_part_two(&reactions); took 1 hour ¯\_(ツ)_/¯
 
     println!("Day 14 Result1: {:?}", result_one);
     println!("Day 14 Result2: {:?}", result_two);
@@ -22,6 +22,30 @@ fn get_part_one(reactions: &Vec<Reaction>) -> i64 {
     });
 
     laboratory.ore_count
+}
+
+fn get_part_two(reactions: &Vec<Reaction>) -> i64 {
+    let mut laboratory = Laboratory::new(&reactions);
+
+    laboratory.limited_ore = true;
+    laboratory.ore_count = 1000000000000;
+
+    let mut icount = 0;
+
+    loop {
+        laboratory.get_chemical(&Chemical {
+            name: "FUEL".to_owned(),
+            quantity: 1,
+        });
+
+        if laboratory.ore_count > 0 {
+            icount += 1;
+        } else {
+            break;
+        }
+    }
+
+    icount
 }
 
 impl Laboratory {
@@ -44,20 +68,17 @@ impl Laboratory {
             inventory: HashSet::new(),
             recipes: recipes,
             ore_count: 0,
+            limited_ore: false,
         }
     }
 
-    fn get_chemical(&mut self, chemical: &Chemical) -> Chemical {
+    fn get_chemical(&mut self, chemical: &Chemical) {
         let mut from_inventory = match self.inventory.take(&chemical) {
             Some(val) => val,
             None => self.create_chemical(&chemical.name),
         };
 
         let qty_needed = chemical.quantity;
-        // println!(
-        //     "Obtaining {:?} which I need {} of but have {}",
-        //     chemical.name, qty_needed, from_inventory.quantity
-        // );
 
         from_inventory.quantity -= qty_needed;
 
@@ -69,17 +90,15 @@ impl Laboratory {
         if !self.inventory.insert(from_inventory) {
             panic!("Already in our inventory! {:?}", chemical.name)
         }
-
-        chemical.to_owned()
     }
 
     fn run_recipe(&mut self, name: &str, quantity_required: i64) -> i64 {
         if name == "ORE" {
-            // println!(
-            //     "Running recipe for {} to get {} and made {}",
-            //     name, quantity_required, quantity_required
-            // );
-            self.ore_count += quantity_required;
+            if self.limited_ore {
+                self.ore_count -= quantity_required;
+            } else {
+                self.ore_count += quantity_required;
+            }
             return 0;
         }
 
@@ -96,16 +115,10 @@ impl Laboratory {
 
         qty -= quantity_required;
 
-        // println!(
-        //     "Running recipe for {} to get {} and made {}",
-        //     name, quantity_required, qty
-        // );
-
         qty
     }
 
     fn create_chemical(&mut self, name: &str) -> Chemical {
-        // println!("Creating chemical {}", name);
         Chemical {
             name: name.to_owned(),
             quantity: 0,
@@ -118,6 +131,7 @@ struct Laboratory {
     inventory: HashSet<Chemical>,
     recipes: HashMap<String, Reaction>,
     ore_count: i64,
+    limited_ore: bool,
 }
 
 #[derive(Debug, Clone, Eq)]
