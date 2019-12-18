@@ -20,17 +20,23 @@ fn get_part_one(input_vec: &Vec<i64>) -> i64 {
     let mut robot = Robot::new(Computer::new(vec![], &input_vec, 3000));
     robot.send_command(Dir::North);
 
-    let mut i = 0;
+    let mut i: i64 = 0;
+    let target = 1000000;
 
     while robot.keep_update() {
-        if i > 1000000000 {
-            robot.maze.draw();
+        if i > target {
             break;
         }
+
         robot.update();
 
         i += 1;
     }
+
+    robot.maze.set_tile(Vec2::new(0, 0), Tile::Bot);
+    robot.maze.set_tile(robot.maze.robot_pos, Tile::Bot);
+    robot.maze.set_tile(robot.maze.oxygen_pos, Tile::Oxy);
+    robot.maze.draw();
 
     0
 }
@@ -58,24 +64,43 @@ impl Robot {
             Wall => {
                 self.maze
                     .set_tile(self.pos + Vec2::from(self.last_command), Tile::Wall);
-
-                let val = (random::<u64>() % 4) as i64 + 1;
-                self.send_command(Dir::from(val));
             }
             Step => {
                 self.maze.set_tile(self.pos, Tile::Empty);
                 self.pos += Vec2::from(self.last_command);
-                self.send_command(self.last_command.to_owned());
             }
             Oxy => {
-                self.maze.set_tile(self.pos, Tile::Oxy);
                 self.pos += Vec2::from(self.last_command);
-                println!("Found the oxygen!");
-                self.computer.stop = true;
+                self.maze.oxygen_pos = self.pos;
             }
         }
 
-        self.maze.set_tile(self.pos, Tile::Bot);
+        self.maze.robot_pos = self.pos;
+        self.send_command(self.get_next_direction());
+    }
+
+    fn get_next_direction(&self) -> Dir {
+        let mut backup = Vec::<Dir>::new();
+
+        for i in 1..5 {
+            let dir = Dir::from(i);
+            let new_pos = self.pos + Vec2::from(dir);
+
+            match self.maze.get_tile(&new_pos) {
+                Tile::Unknown => return dir,
+                Tile::Empty => backup.push(dir),
+                _ => continue,
+            }
+        }
+
+        if backup.len() == 0 {
+            // we can sometimes get stuck when we've found the oxygen tank
+            let val = (random::<u64>() % 4) as i64 + 1;
+            return Dir::from(val);
+        }
+
+        let rand = random::<usize>() % backup.len();
+        backup[rand]
     }
 
     fn tick(&mut self) -> Reply {
@@ -92,7 +117,13 @@ impl Maze {
     fn new() -> Self {
         Maze {
             map: HashMap::new(),
+            robot_pos: Vec2::new(0, 0),
+            oxygen_pos: Vec2::new(0, 0),
         }
+    }
+
+    fn get_tile(&self, pos: &Vec2) -> Tile {
+        self.map.get(pos).unwrap_or(&Tile::Unknown).to_owned()
     }
 
     fn set_tile(&mut self, pos: Vec2, new_tile: Tile) {
@@ -100,25 +131,18 @@ impl Maze {
     }
 
     fn draw(&self) {
-        //println!("{}[2J", 27 as char);
-
         let mut current_display: Vec<Tile> = vec![];
 
         let (minx, miny, maxx, maxy) = self.get_screen_dimensions();
-
         let w = maxx - minx;
         let h = maxy - miny;
         let size = w * h;
 
+        let offset = Vec2::new(minx, miny);
+
         for i in 0..size {
-            let pos = Maze::get_xy(i, w);
-            let corpos = (pos.0 + minx, pos.1 + miny);
-            let pixel = self
-                .map
-                .get(&Vec2::from(corpos))
-                .unwrap_or(&Tile::Wall)
-                .to_owned();
-            current_display.push(pixel);
+            let pos = Vec2::from(Maze::get_xy(i, w)) + offset;
+            current_display.push(self.get_tile(&pos));
         }
 
         Maze::draw_image(w as usize, &current_display);
@@ -131,8 +155,9 @@ impl Maze {
             }
 
             let put = match image[i] {
+                Tile::Unknown => '█',
                 Tile::Empty => '░',
-                Tile::Wall => '█',
+                Tile::Wall => '█', //'▓',
                 Tile::Oxy => 'X',
                 Tile::Bot => 'O',
             };
@@ -172,6 +197,8 @@ impl Maze {
 
 struct Maze {
     map: HashMap<Vec2, Tile>,
+    robot_pos: Vec2,
+    oxygen_pos: Vec2,
 }
 
 struct Robot {
@@ -210,6 +237,7 @@ impl From<Dir> for Vec2 {
     fn from(val: Dir) -> Self {
         use Dir::*;
         match val {
+            None => panic!("Cannot convert none!"),
             North => Vec2::new(0, 1),
             South => Vec2::new(0, -1),
             West => Vec2::new(1, 0),
@@ -227,6 +255,7 @@ enum Reply {
 
 #[derive(Debug, Clone, Copy)]
 enum Tile {
+    Unknown,
     Empty,
     Wall,
     Oxy,
@@ -235,7 +264,8 @@ enum Tile {
 
 #[derive(Debug, Clone, Copy)]
 enum Dir {
-    North = 1,
+    None,
+    North,
     South,
     West,
     East,
