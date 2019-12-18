@@ -52,7 +52,7 @@ fn get_part_two(input_vec: &Vec<i64>) -> (usize, Vec<u32>) {
     }
     // grid is nice enough to start 0,0 so we don't need an offset
 
-    let w = maxx as usize;
+    let w = maxx as usize - 1;
     let h = maxy as usize + 1;
     let size = w * h;
 
