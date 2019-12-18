@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::num::ParseIntError;
@@ -5,56 +6,127 @@ use std::str::FromStr;
 
 pub fn day(input: String) {
     let reactions = parse(input);
-    let mut chemicals = HashSet::<Chemical>::new();
 
-    for reaction in &reactions {
-        for inp in &reaction.input {
-            chemicals.insert(inp.to_owned());
-        }
-
-        chemicals.insert(reaction.output.to_owned());
-    }
-
-    for chem in chemicals {
-        println!("{:?} => {:?}", chem.name, chem.get_required_ore(&reactions));
-    }
-
-    let result_one = 0;
+    let result_one = get_part_one(&reactions);
     let result_two = 0;
 
     println!("Day 14 Result1: {:?}", result_one);
     println!("Day 14 Result2: {:?}", result_two);
 }
 
-impl Chemical {
-    fn get_required_ore(&self, recipes: &Vec<Reaction>) -> u64 {
-        let mut result = 0;
+fn get_part_one(reactions: &Vec<Reaction>) -> i64 {
+    let mut laboratory = Laboratory::new(&reactions);
+    laboratory.get_chemical(&Chemical {
+        name: "FUEL".to_owned(),
+        quantity: 1,
+    });
 
-        for recipe in recipes {
-            if recipe.output.name != self.name {
-                continue;
-            }
+    laboratory.ore_count
+}
 
-            for chem in &recipe.input {
-                if chem.name == "ORE" {
-                    result += chem.quantity / recipe.output.quantity;
-                }
+impl Laboratory {
+    fn new(reactions: &Vec<Reaction>) -> Self {
+        let mut recipes = HashMap::<String, Reaction>::new();
 
-                result += chem.get_required_ore(&recipes) * chem.quantity;
+        for reaction in reactions {
+            if recipes
+                .insert(reaction.output.name.to_owned(), reaction.to_owned())
+                .is_some()
+            {
+                panic!(
+                    "multiple recipes for the same chemical {:?}",
+                    reaction.output
+                );
             }
         }
 
-        result
+        Laboratory {
+            inventory: HashSet::new(),
+            recipes: recipes,
+            ore_count: 0,
+        }
     }
+
+    fn get_chemical(&mut self, chemical: &Chemical) -> Chemical {
+        let mut from_inventory = match self.inventory.take(&chemical) {
+            Some(val) => val,
+            None => self.create_chemical(&chemical.name),
+        };
+
+        let qty_needed = chemical.quantity;
+        // println!(
+        //     "Obtaining {:?} which I need {} of but have {}",
+        //     chemical.name, qty_needed, from_inventory.quantity
+        // );
+
+        from_inventory.quantity -= qty_needed;
+
+        if from_inventory.quantity < 0 {
+            from_inventory.quantity =
+                self.run_recipe(&from_inventory.name, from_inventory.quantity.abs());
+        }
+
+        if !self.inventory.insert(from_inventory) {
+            panic!("Already in our inventory! {:?}", chemical.name)
+        }
+
+        chemical.to_owned()
+    }
+
+    fn run_recipe(&mut self, name: &str, quantity_required: i64) -> i64 {
+        if name == "ORE" {
+            // println!(
+            //     "Running recipe for {} to get {} and made {}",
+            //     name, quantity_required, quantity_required
+            // );
+            self.ore_count += quantity_required;
+            return 0;
+        }
+
+        let recipe = self.recipes.get(name).unwrap().to_owned();
+        let mut qty = 0;
+
+        while qty < quantity_required {
+            for input in &recipe.input {
+                self.get_chemical(input);
+            }
+
+            qty += recipe.output.quantity;
+        }
+
+        qty -= quantity_required;
+
+        // println!(
+        //     "Running recipe for {} to get {} and made {}",
+        //     name, quantity_required, qty
+        // );
+
+        qty
+    }
+
+    fn create_chemical(&mut self, name: &str) -> Chemical {
+        // println!("Creating chemical {}", name);
+        Chemical {
+            name: name.to_owned(),
+            quantity: 0,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Laboratory {
+    inventory: HashSet<Chemical>,
+    recipes: HashMap<String, Reaction>,
+    ore_count: i64,
 }
 
 #[derive(Debug, Clone, Eq)]
 struct Chemical {
     name: String,
-    quantity: u64,
+    quantity: i64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Reaction {
     input: Vec<Chemical>,
     output: Chemical,
@@ -69,7 +141,7 @@ impl FromStr for Chemical {
 
         let chem = Chemical {
             name: input[1].to_owned(),
-            quantity: input[0].parse::<u64>().unwrap(),
+            quantity: input[0].parse::<i64>().unwrap(),
         };
 
         Ok(chem)
