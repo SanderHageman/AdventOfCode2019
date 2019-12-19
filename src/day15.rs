@@ -9,15 +9,47 @@ type Vec2 = Vector2<i64>;
 pub fn day(input: String) {
     let input_vec = Computer::parse_input(input);
 
-    let result_one = get_part_one(&input_vec); // 214
-    let result_two = 0;
+    let mut robot = Robot::new(Computer::new(vec![], &input_vec, 3000));
+    run_through_maze(&mut robot);
+
+    let result_one = get_part_one(&mut robot); // 214
+    let result_two = get_part_two(&mut robot);
+
+    // robot.maze.draw();
 
     println!("Day 15 Result1: {:?}", result_one);
     println!("Day 15 Result2: {:?}", result_two);
 }
 
-fn get_part_one(input_vec: &Vec<i64>) -> usize {
-    let mut robot = Robot::new(Computer::new(vec![], &input_vec, 3000));
+fn get_part_one(robot: &mut Robot) -> usize {
+    robot.maze.shortest_path_to_oxygen()
+}
+
+fn get_part_two(robot: &Robot) -> usize {
+    let maze = normalize_map(&robot.maze);
+    0
+}
+
+fn normalize_map(maze: &Maze) -> HashMap<Vec2, Tile> {
+    let mut result = HashMap::new();
+
+    let (minx, miny, maxx, maxy) = maze.get_screen_dimensions();
+    let w = maxx - minx;
+    let h = maxy - miny;
+    let size = w * h;
+
+    let offset = Vec2::new(minx, miny);
+
+    for i in 0..size {
+        let target_pos = Vec2::from(Maze::get_xy(i, w));
+        let current_pos = target_pos + offset;
+        result.insert(target_pos, maze.get_tile(&current_pos));
+    }
+
+    result
+}
+
+fn run_through_maze(robot: &mut Robot) {
     robot.send_command(Dir::North);
 
     let mut i: i64 = 0;
@@ -33,14 +65,9 @@ fn get_part_one(input_vec: &Vec<i64>) -> usize {
         i += 1;
     }
 
-    let result = robot.maze.solve();
-
     robot.maze.set_tile(Vec2::new(0, 0), Tile::Bot);
     robot.maze.set_tile(robot.maze.robot_pos, Tile::Bot);
     robot.maze.set_tile(robot.maze.oxygen_pos, Tile::Oxy);
-
-    robot.maze.draw();
-    result
 }
 
 impl Robot {
@@ -197,36 +224,8 @@ impl Maze {
         (x, y)
     }
 
-    fn get_next_direction(&mut self, pos: Vec2, offset: Vec2) -> Option<Vec2> {
-        self.solve_cells[pos.y as usize][pos.x as usize] = false;
-        let mut backup = Vec::<Vec2>::new();
-
-        for i in 1..5 {
-            let dir = Dir::from(i);
-            let new_pos = pos + Vec2::from(dir);
-
-            if !self.solve_cells[new_pos.y as usize][new_pos.x as usize] {
-                continue;
-            }
-
-            match self.get_tile(&(new_pos + offset)) {
-                Tile::Empty => backup.push(new_pos),
-                Tile::Bot => backup.push(new_pos),
-                Tile::Oxy => backup.push(new_pos),
-                _ => continue,
-            }
-        }
-
-        if backup.is_empty() {
-            return None;
-        }
-
-        let rand = random::<usize>() % backup.len();
-        Some(backup[rand])
-    }
-
     //https://www.rosettacode.org/wiki/Maze_solving#Rust
-    fn solve(&mut self) -> usize {
+    fn shortest_path_to_oxygen(&mut self) -> usize {
         let (minx, miny, maxx, maxy) = self.get_screen_dimensions();
         let w = maxx - minx;
         let h = maxy - miny;
@@ -260,8 +259,37 @@ impl Maze {
 
         solution.len() - 1
     }
+
+    fn get_next_direction(&mut self, pos: Vec2, offset: Vec2) -> Option<Vec2> {
+        self.solve_cells[pos.y as usize][pos.x as usize] = false;
+        let mut backup = Vec::<Vec2>::new();
+
+        for i in 1..5 {
+            let dir = Dir::from(i);
+            let new_pos = pos + Vec2::from(dir);
+
+            if !self.solve_cells[new_pos.y as usize][new_pos.x as usize] {
+                continue;
+            }
+
+            match self.get_tile(&(new_pos + offset)) {
+                Tile::Empty => backup.push(new_pos),
+                Tile::Bot => backup.push(new_pos),
+                Tile::Oxy => backup.push(new_pos),
+                _ => continue,
+            }
+        }
+
+        if backup.is_empty() {
+            return None;
+        }
+
+        let rand = random::<usize>() % backup.len();
+        Some(backup[rand])
+    }
 }
 
+#[derive(Clone)]
 struct Maze {
     map: HashMap<Vec2, Tile>,
     robot_pos: Vec2,
