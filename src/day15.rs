@@ -21,7 +21,7 @@ fn get_part_one(input_vec: &Vec<i64>) -> usize {
     robot.send_command(Dir::North);
 
     let mut i: i64 = 0;
-    let target = 1000000;
+    let target = 500000;
 
     while robot.keep_update() {
         if i > target {
@@ -33,11 +33,14 @@ fn get_part_one(input_vec: &Vec<i64>) -> usize {
         i += 1;
     }
 
+    let result = robot.maze.solve();
+
     robot.maze.set_tile(Vec2::new(0, 0), Tile::Bot);
     robot.maze.set_tile(robot.maze.robot_pos, Tile::Bot);
     robot.maze.set_tile(robot.maze.oxygen_pos, Tile::Oxy);
 
-    robot.maze.solve()
+    robot.maze.draw();
+    result
 }
 
 impl Robot {
@@ -155,9 +158,9 @@ impl Maze {
             }
 
             let put = match image[i] {
-                Tile::Unknown => '█',
+                Tile::Unknown => '▓',
                 Tile::Empty => '░',
-                Tile::Wall => '█', //'▓',
+                Tile::Wall => '█',
                 Tile::Oxy => 'X',
                 Tile::Bot => 'O',
             };
@@ -250,11 +253,10 @@ impl Maze {
             next = *solution.last().unwrap();
         }
 
-        for cell in &solution {
-            self.set_tile(cell + offset, Tile::Oxy);
-        }
-
-        self.draw();
+        // uncomment to draw path
+        // for cell in &solution {
+        //     self.set_tile(cell + offset, Tile::Oxy);
+        // }
 
         solution.len() - 1
     }
