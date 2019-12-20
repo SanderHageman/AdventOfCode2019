@@ -1,24 +1,50 @@
 pub fn day(input: String) {
-    let result_one = get_part_one(&input);
-    let result_two = 0;
-
-    println!("Day 16 Result1: {:?}", result_one);
-    println!("Day 16 Result2: {:?}", result_two);
-}
-
-fn get_part_one(input: &str) -> Vec<i32> {
     let input_signal = input
         .chars()
         .map(|c| c.to_digit(10).unwrap() as i32)
         .collect::<Vec<_>>();
 
-    let mut output = phase(&input_signal);
+    let result_one = get_part_one(&input_signal);
+    let result_two = get_part_two(&input_signal);
+
+    println!("Day 16 Result1: {:?}", result_one);
+    println!("Day 16 Result2: {:?}", result_two);
+}
+
+fn get_part_one(input_signal: &Vec<i32>) -> Vec<i32> {
+    let mut output: Vec<Vec<i32>> = vec![phase(input_signal)];
     for _ in 1..100 {
-        output = phase(&output);
+        output.push(phase(output.last().unwrap()));
     }
 
-    output.truncate(8);
-    output
+    Vec::from(&output.last().unwrap()[0..8])
+}
+
+fn get_part_two(input_signal: &Vec<i32>) -> Vec<i32> {
+    const INPUT_OFFSET: usize = 5979633;
+
+    let mut signal = Vec::<i32>::new();
+
+    for _ in 0..10000 {
+        signal.extend(input_signal.iter())
+    }
+
+    let mut current_signal = Vec::from(&signal[INPUT_OFFSET..signal.len()]);
+    let mut next_signal = current_signal.clone();
+    let siglen = current_signal.len();
+
+    for _ in 0..100 {
+        let index = siglen - 2;
+        next_signal[index + 1] = current_signal[index + 1];
+
+        for i in (0..index).rev() {
+            next_signal[i] = ((next_signal[i + 1] + current_signal[i]) % 10).abs();
+        }
+
+        current_signal = next_signal.clone();
+    }
+
+    Vec::from(&current_signal[0..8])
 }
 
 fn phase(input: &Vec<i32>) -> Vec<i32> {
