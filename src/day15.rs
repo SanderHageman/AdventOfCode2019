@@ -12,10 +12,10 @@ pub fn day(input: String) {
     let mut robot = Robot::new(Computer::new(vec![], &input_vec, 3000));
     run_through_maze(&mut robot);
 
-    let result_one = get_part_one(&mut robot); // 214
+    let result_one = get_part_one(&mut robot);
     let result_two = get_part_two(&mut robot);
 
-    // robot.maze.draw();
+    robot.maze.draw();
 
     println!("Day 15 Result1: {:?}", result_one);
     println!("Day 15 Result2: {:?}", result_two);
@@ -25,28 +25,8 @@ fn get_part_one(robot: &mut Robot) -> usize {
     robot.maze.shortest_path_to_oxygen()
 }
 
-fn get_part_two(robot: &Robot) -> usize {
-    let maze = normalize_map(&robot.maze);
-    0
-}
-
-fn normalize_map(maze: &Maze) -> HashMap<Vec2, Tile> {
-    let mut result = HashMap::new();
-
-    let (minx, miny, maxx, maxy) = maze.get_screen_dimensions();
-    let w = maxx - minx;
-    let h = maxy - miny;
-    let size = w * h;
-
-    let offset = Vec2::new(minx, miny);
-
-    for i in 0..size {
-        let target_pos = Vec2::from(Maze::get_xy(i, w));
-        let current_pos = target_pos + offset;
-        result.insert(target_pos, maze.get_tile(&current_pos));
-    }
-
-    result
+fn get_part_two(robot: &mut Robot) -> usize {
+    robot.maze.longest_path_from_oxygen()
 }
 
 fn run_through_maze(robot: &mut Robot) {
@@ -163,7 +143,7 @@ impl Maze {
     fn draw(&self) {
         let mut current_display: Vec<Tile> = vec![];
 
-        let (minx, miny, maxx, maxy) = self.get_screen_dimensions();
+        let (minx, miny, maxx, maxy) = Maze::get_screen_dimensions(&self.map);
         let w = maxx - minx;
         let h = maxy - miny;
         let size = w * h;
@@ -197,14 +177,14 @@ impl Maze {
         print!("\n");
     }
 
-    fn get_screen_dimensions(&self) -> (i64, i64, i64, i64) {
+    fn get_screen_dimensions<T>(map: &HashMap<Vec2, T>) -> (i64, i64, i64, i64) {
         let mut minx = i64::max_value();
         let mut miny = i64::max_value();
 
         let mut maxx = i64::min_value();
         let mut maxy = i64::min_value();
 
-        for pos in self.map.keys() {
+        for pos in map.keys() {
             let x = pos.x;
             let y = pos.y;
 
@@ -224,9 +204,45 @@ impl Maze {
         (x, y)
     }
 
-    //https://www.rosettacode.org/wiki/Maze_solving#Rust
     fn shortest_path_to_oxygen(&mut self) -> usize {
-        let (minx, miny, maxx, maxy) = self.get_screen_dimensions();
+        self.get_path_len(Vec2::new(0, 0), self.oxygen_pos)
+    }
+
+    fn longest_path_from_oxygen(&mut self) -> usize {
+        let mut end_points = Vec::<Vec2>::new();
+
+        for (pos, tile_type) in &self.map {
+            if *tile_type as usize != Tile::Empty as usize {
+                continue;
+            }
+
+            let mut open_neighbors = 0;
+            for i in 1..5 {
+                let dir = Dir::from(i);
+                let new_pos = pos + Vec2::from(dir);
+
+                match self.get_tile(&new_pos) {
+                    Tile::Empty => open_neighbors += 1,
+                    _ => continue,
+                }
+            }
+
+            if open_neighbors == 1 {
+                end_points.push(pos.to_owned());
+            }
+        }
+
+        let mut max_dist = 0;
+        for point in end_points {
+            max_dist = max_dist.max(self.get_path_len(self.oxygen_pos, point));
+        }
+
+        max_dist
+    }
+
+    //https://www.rosettacode.org/wiki/Maze_solving#Rust
+    fn get_path_len(&mut self, from: Vec2, to: Vec2) -> usize {
+        let (minx, miny, maxx, maxy) = Maze::get_screen_dimensions(&self.map);
         let w = maxx - minx;
         let h = maxy - miny;
 
@@ -235,8 +251,8 @@ impl Maze {
         self.solve_cells = vec![vec![true; h as usize]; w as usize];
 
         let mut solution: Vec<Vec2> = Vec::new();
-        let mut next = Vec2::new(0, 0) - offset;
-        let last = Vec2::new(self.oxygen_pos.x, self.oxygen_pos.y) - offset;
+        let mut next = from - offset;
+        let last = to - offset;
 
         solution.push(next);
 
