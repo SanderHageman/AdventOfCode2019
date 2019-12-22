@@ -15,7 +15,7 @@ pub fn day(input: String) {
     let result_one = get_part_one(&mut robot);
     let result_two = get_part_two(&mut robot);
 
-    robot.maze.draw();
+    // robot.maze.draw();
 
     println!("Day 15 Result1: {:?}", result_one);
     println!("Day 15 Result2: {:?}", result_two);
