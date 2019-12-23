@@ -1,3 +1,3 @@
 pub fn day(input: String) {
-    println!("test");
+    println!("{}", input);
 }
