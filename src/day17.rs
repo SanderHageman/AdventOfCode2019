@@ -22,24 +22,17 @@ fn get_part_one(input: &Vec<i64>) -> i64 {
 
     while !computer.stop {
         let result = computer.compute_til_output();
-        map.insert(pos, result);
-        
-        let change;
-        match result {
-            46 => change = Vec2::new(1, 0),
-            35 => change = Vec2::new(1, 0),
-            94 => change = Vec2::new(1, 0),
-            10 => change = Vec2::new(-pos.x, 1),
-            _ => panic!("Unknown result"),
-        }
+        map.insert(pos, result as u8);
 
-        pos += change;
+        pos += if result == 10 {
+            Vec2::new(-pos.x, 1)
+        } else {
+            Vec2::new(1, 0)
+        };
     }
 
-    //draw(&map);
+    draw(&map);
     let intersections = get_intersections(&map);
-    println!("{:?}", intersections);
-
     let alignment = intersections.iter().map(|x| x.x * x.y).collect::<Vec<_>>();
 
     let mut result = 0;
@@ -50,7 +43,7 @@ fn get_part_one(input: &Vec<i64>) -> i64 {
     result
 }
 
-fn get_intersections(map: &HashMap<Vec2, i64>) -> Vec<Vec2> {
+fn get_intersections(map: &HashMap<Vec2, u8>) -> Vec<Vec2> {
     let mut result = Vec::new();
 
     let l = Vec2::new(-1, 0);
@@ -68,7 +61,7 @@ fn get_intersections(map: &HashMap<Vec2, i64>) -> Vec<Vec2> {
         match map.get(&(pos + l)) {
             Some(x) => {
                 if *x == 35 {
-                    neighbors +=1;
+                    neighbors += 1;
                 }
             }
             None => {}
@@ -77,7 +70,7 @@ fn get_intersections(map: &HashMap<Vec2, i64>) -> Vec<Vec2> {
         match map.get(&(pos + r)) {
             Some(x) => {
                 if *x == 35 {
-                    neighbors +=1;
+                    neighbors += 1;
                 }
             }
             None => {}
@@ -86,7 +79,7 @@ fn get_intersections(map: &HashMap<Vec2, i64>) -> Vec<Vec2> {
         match map.get(&(pos + u)) {
             Some(x) => {
                 if *x == 35 {
-                    neighbors +=1;
+                    neighbors += 1;
                 }
             }
             None => {}
@@ -95,7 +88,7 @@ fn get_intersections(map: &HashMap<Vec2, i64>) -> Vec<Vec2> {
         match map.get(&(pos + d)) {
             Some(x) => {
                 if *x == 35 {
-                    neighbors +=1;
+                    neighbors += 1;
                 }
             }
             None => {}
@@ -109,8 +102,8 @@ fn get_intersections(map: &HashMap<Vec2, i64>) -> Vec<Vec2> {
     result
 }
 
-fn draw(map: &HashMap<Vec2, i64>) {
-    let mut current_display: Vec<i64> = vec![];
+fn draw(map: &HashMap<Vec2, u8>) {
+    let mut current_display: Vec<u8> = vec![];
 
     let (minx, miny, maxx, maxy) = get_screen_dimensions(&map);
     let w = maxx - minx;
@@ -130,24 +123,16 @@ fn draw(map: &HashMap<Vec2, i64>) {
     draw_image(&current_display);
 }
 
-fn draw_image(image: &Vec<i64>) {
+fn draw_image(image: &Vec<u8>) {
     for i in 0..image.len() {
-        if image[i] == 10 {
-            print!("\n");
-            continue;
+        let put = image[i] as char;
+
+        if put.is_whitespace() {
+            print!("{}", put);
+        } else {
+            print!("{}{}", put, put);
         }
-
-        let put = match image[i] {
-            46 => '.',
-            35 => '#',
-            94 => '^',
-            _ => panic!("Unknown result"),
-        };
-
-        // print!("{}{}", put, put);
-        print!("{}", put);
     }
-    print!("\n");
 }
 
 fn get_screen_dimensions<T>(map: &HashMap<Vec2, T>) -> (i64, i64, i64, i64) {
