@@ -1,6 +1,6 @@
 use super::intcode_computer::*;
-use rand::prelude::*;
 use cgmath::*;
+use rand::prelude::*;
 use std::collections::HashMap;
 
 type Vec2 = Vector2<i64>;
@@ -166,7 +166,7 @@ fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
                     1 => 'B',
                     2 => 'C',
                     _ => panic!("What the heck"),
-                }; 
+                };
                 main_routine.push(put);
                 break 'inner;
             }
