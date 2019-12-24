@@ -1,4 +1,5 @@
 use super::intcode_computer::*;
+use rand::prelude::*;
 use cgmath::*;
 use std::collections::HashMap;
 
@@ -45,7 +46,7 @@ fn get_part_one(input: &Vec<i64>, map: &mut HashMap<Vec2, u8>) -> i64 {
 }
 
 fn get_part_two(input: &Vec<i64>, map: HashMap<Vec2, u8>) -> i64 {
-    let mut input =input.clone();
+    let mut input = input.clone();
     input[0] = 2;
     let mut robot = Robot::new(Computer::new(vec![], &input, 10000));
 
@@ -88,19 +89,181 @@ fn get_part_two(input: &Vec<i64>, map: HashMap<Vec2, u8>) -> i64 {
 
     dir_to_dist.push((last_turn, count));
 
-    let routine = "A,B,B,C,C,A,B,B,C,A";
-    let a = "R,4,R,12,R,10,L,12";
-    let b = "L,12,R,4,R,12";
-    let c = "L,12,L,8,R,10";
-    let ans = "n";
+    let routine_vals = find_routine(&dir_to_dist);
 
-    input_string(&mut robot, &routine);
-    input_string(&mut robot, &a);
-    input_string(&mut robot, &b);
-    input_string(&mut robot, &c);
-    input_string(&mut robot, &ans);
+    for rot in routine_vals {
+        input_string(&mut robot, &rot);
+    }
+
+    // never display
+    input_string(&mut robot, &"n");
 
     robot.computer.compute()
+}
+
+fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
+    // steps to take:
+    // keep taking entry [0..i(+1)] until it doesn't match anything else any more
+    // assign that to a letter, remove from the path and continue until done ;)
+
+    let mut max_size = vec![4, 4, 4];
+    let mut entries = Vec::new();
+
+    'main: loop {
+        let mut mut_path = path.to_owned();
+        entries.clear();
+
+        while entries.len() < 3 {
+            let mut test_size = 1;
+            while test_size <= max_size[entries.len()]
+                && line_length_allowed(test_size, &mut_path)
+                && has_equal(test_size, &mut_path)
+            {
+                test_size += 1;
+            }
+            test_size -= 1;
+
+            if test_size <= 0 {
+                break;
+            }
+
+            let result = Vec::from(&mut_path[0..test_size]);
+            remove_vec_from_map(test_size, &mut mut_path);
+
+            entries.push(result);
+
+            if mut_path.len() <= 0 {
+                // println!("Found! {:?}", entries);
+                break 'main;
+            }
+        }
+
+        for i in 0..max_size.len() {
+            max_size[i] = (random::<usize>() % 3) + 2;
+        }
+
+        // println!("Not found, trying again with sizes {:?}", max_size);
+    }
+
+    let mut x_indices = Vec::new();
+    for entry in &entries {
+        x_indices.push(get_equal_indices(entry, path));
+    }
+
+    let mut indices = Vec::<usize>::new();
+    for entry in &x_indices {
+        indices.extend(entry.iter());
+    }
+
+    indices.sort();
+
+    let mut main_routine = Vec::new();
+    for index in &indices {
+        'inner: for i in 0..3 {
+            if x_indices[i].contains(&index) {
+                let put = match i {
+                    0 => 'A',
+                    1 => 'B',
+                    2 => 'C',
+                    _ => panic!("What the heck"),
+                }; 
+                main_routine.push(put);
+                break 'inner;
+            }
+        }
+    }
+
+    let mut result = Vec::new();
+
+    let mut main_str = String::new();
+    for val in main_routine {
+        main_str.push(val);
+        main_str.push(',');
+    }
+    main_str.pop();
+    result.push(main_str);
+
+    for i in 0..3 {
+        let mut res_str = String::new();
+
+        for (ch, count) in &entries[i] {
+            res_str = format!("{},{},{}", res_str, ch, count);
+        }
+
+        res_str.remove(0);
+        result.push(res_str);
+    }
+
+    result
+}
+
+fn remove_vec_from_map(count: usize, path: &mut Vec<(char, u8)>) {
+    let mut remove_indices = get_equal(count, path);
+    // println!("Removing {:?} with count {}", remove_indices, count);
+    remove_indices.reverse();
+
+    for base_index in remove_indices {
+        for i in (0..count).rev() {
+            path.remove(base_index + i);
+        }
+    }
+}
+
+fn line_length_allowed(count: usize, path: &Vec<(char, u8)>) -> bool {
+    let entry = &path[0..count];
+    let mut result = 0;
+
+    for (_, i) in entry {
+        // 'R' + ',' + '1' (+ '2') + ','
+        result += 4;
+
+        if *i > 9 {
+            result += 1;
+        }
+    }
+
+    result <= 20
+}
+
+fn has_equal(count: usize, path: &Vec<(char, u8)>) -> bool {
+    get_equal(count, path).len() > 1
+}
+
+fn get_equal_indices(slice: &[(char, u8)], path: &Vec<(char, u8)>) -> Vec<usize> {
+    let mut result = Vec::new();
+    let count = slice.len();
+
+    for i in 0..=(path.len() - count) {
+        let extend = i + count;
+        assert!(extend <= path.len());
+
+        let comp = &path[i..extend];
+
+        if are_equal(slice, comp) {
+            // println!("found equal with {:?} on {} with len {}", entry, i, count);
+            result.push(i);
+        }
+    }
+
+    result
+}
+
+fn get_equal(count: usize, path: &Vec<(char, u8)>) -> Vec<usize> {
+    let max_count = path.len() / count;
+    assert!(max_count > 1);
+
+    let entry = &path[0..count];
+    get_equal_indices(entry, path)
+}
+
+fn are_equal(a: &[(char, u8)], b: &[(char, u8)]) -> bool {
+    assert_eq!(a.len(), b.len());
+    for i in 0..a.len() {
+        if a[i] != b[i] {
+            return false;
+        }
+    }
+    true
 }
 
 fn input_string(robot: &mut Robot, input: &str) {
