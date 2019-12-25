@@ -76,7 +76,7 @@ fn get_part_two(input: &Vec<i64>, map: HashMap<Vec2, u8>) -> i64 {
             if prev_direction as u8 != Dir::None as u8 {
                 dir_to_dist.push((last_turn, count));
 
-                last_turn = l_r(prev_direction, cur_dir);
+                last_turn = get_l_or_r(prev_direction, cur_dir);
             }
 
             count = 0;
@@ -89,14 +89,14 @@ fn get_part_two(input: &Vec<i64>, map: HashMap<Vec2, u8>) -> i64 {
 
     dir_to_dist.push((last_turn, count));
 
-    let routine_vals = find_routine(&dir_to_dist);
+    let input_strings = find_routine(&dir_to_dist);
 
-    for rot in routine_vals {
-        input_string(&mut robot, &rot);
+    for line in input_strings {
+        send_string_to_robot(&mut robot, &line);
     }
 
     // never display
-    input_string(&mut robot, &"n");
+    send_string_to_robot(&mut robot, &"n");
 
     robot.computer.compute()
 }
@@ -127,13 +127,10 @@ fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
                 break;
             }
 
-            let result = Vec::from(&mut_path[0..test_size]);
-            remove_vec_from_map(test_size, &mut mut_path);
-
-            entries.push(result);
+            entries.push(Vec::from(&mut_path[0..test_size]));
+            remove_from_vec(test_size, &mut mut_path);
 
             if mut_path.len() <= 0 {
-                // println!("Found! {:?}", entries);
                 break 'main;
             }
         }
@@ -141,12 +138,14 @@ fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
         for i in 0..max_size.len() {
             max_size[i] = (random::<usize>() % 3) + 2;
         }
-
-        // println!("Not found, trying again with sizes {:?}", max_size);
     }
 
+    routine_to_string(&entries, path)
+}
+
+fn routine_to_string(entries: &Vec<Vec<(char, u8)>>, path: &Vec<(char, u8)>) -> Vec<String> {
     let mut x_indices = Vec::new();
-    for entry in &entries {
+    for entry in entries {
         x_indices.push(get_equal_indices(entry, path));
     }
 
@@ -159,16 +158,16 @@ fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
 
     let mut main_routine = Vec::new();
     for index in &indices {
-        'inner: for i in 0..3 {
+        for i in 0..3 {
             if x_indices[i].contains(&index) {
                 let put = match i {
                     0 => 'A',
                     1 => 'B',
                     2 => 'C',
-                    _ => panic!("What the heck"),
+                    _ => panic!("Unhandled index {}", i),
                 };
                 main_routine.push(put);
-                break 'inner;
+                break;
             }
         }
     }
@@ -187,7 +186,7 @@ fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
         let mut res_str = String::new();
 
         for (ch, count) in &entries[i] {
-            res_str = format!("{},{},{}", res_str, ch, count);
+            res_str += &format!(",{},{}", ch, count);
         }
 
         res_str.remove(0);
@@ -197,9 +196,8 @@ fn find_routine(path: &Vec<(char, u8)>) -> Vec<String> {
     result
 }
 
-fn remove_vec_from_map(count: usize, path: &mut Vec<(char, u8)>) {
+fn remove_from_vec(count: usize, path: &mut Vec<(char, u8)>) {
     let mut remove_indices = get_equal(count, path);
-    // println!("Removing {:?} with count {}", remove_indices, count);
     remove_indices.reverse();
 
     for base_index in remove_indices {
@@ -240,7 +238,6 @@ fn get_equal_indices(slice: &[(char, u8)], path: &Vec<(char, u8)>) -> Vec<usize>
         let comp = &path[i..extend];
 
         if are_equal(slice, comp) {
-            // println!("found equal with {:?} on {} with len {}", entry, i, count);
             result.push(i);
         }
     }
@@ -266,14 +263,14 @@ fn are_equal(a: &[(char, u8)], b: &[(char, u8)]) -> bool {
     true
 }
 
-fn input_string(robot: &mut Robot, input: &str) {
+fn send_string_to_robot(robot: &mut Robot, input: &str) {
     for byte in input.bytes() {
         robot.computer.add_input(byte as i64);
     }
     robot.computer.add_input('\n' as u8 as i64);
 }
 
-fn l_r(prev: Dir, next: Dir) -> char {
+fn get_l_or_r(prev: Dir, next: Dir) -> char {
     let diff = next as i8 - prev as i8;
 
     if diff.abs() == 1 {
@@ -393,11 +390,7 @@ enum Dir {
 
 fn get_intersections(map: &HashMap<Vec2, u8>) -> Vec<Vec2> {
     let mut result = Vec::new();
-
-    let l = Vec2::new(-1, 0);
-    let r = Vec2::new(1, 0);
-    let u = Vec2::new(0, -1);
-    let d = Vec2::new(0, 1);
+    let change = vec![(-1, 0), (1, 0), (0, -1), (0, 1)];
 
     for (pos, num) in map {
         if *num != 35 {
@@ -406,40 +399,15 @@ fn get_intersections(map: &HashMap<Vec2, u8>) -> Vec<Vec2> {
 
         let mut neighbors = 0;
 
-        match map.get(&(pos + l)) {
-            Some(x) => {
-                if *x == 35 {
-                    neighbors += 1;
+        for i in 0..change.len() {
+            match map.get(&(pos + Vec2::from(change[i]))) {
+                Some(x) => {
+                    if *x == 35 {
+                        neighbors += 1;
+                    }
                 }
+                None => {}
             }
-            None => {}
-        }
-
-        match map.get(&(pos + r)) {
-            Some(x) => {
-                if *x == 35 {
-                    neighbors += 1;
-                }
-            }
-            None => {}
-        }
-
-        match map.get(&(pos + u)) {
-            Some(x) => {
-                if *x == 35 {
-                    neighbors += 1;
-                }
-            }
-            None => {}
-        }
-
-        match map.get(&(pos + d)) {
-            Some(x) => {
-                if *x == 35 {
-                    neighbors += 1;
-                }
-            }
-            None => {}
         }
 
         if neighbors == 4 {
